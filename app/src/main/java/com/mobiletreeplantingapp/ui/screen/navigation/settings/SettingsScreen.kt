@@ -26,8 +26,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.mobiletreeplantingapp.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.mobiletreeplantingapp.ui.component.ThemeSelector
 
 @Composable
 fun SettingsScreen(
@@ -102,6 +104,43 @@ fun SettingsScreen(
                 title = "Help & Support",
                 onClick = { /* Handle click */ }
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Theme Selector
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Build,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Theme",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    ThemeSelector(
+                        currentTheme = settingsViewModel.currentTheme,
+                        onThemeSelected = { settingsViewModel.setTheme(it) }
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 

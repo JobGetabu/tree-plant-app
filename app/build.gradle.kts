@@ -95,4 +95,7 @@ dependencies {
     // authentication
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.android.gms:play-services-auth:21.3.0")
+
+    // Add this with your other dependencies
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }

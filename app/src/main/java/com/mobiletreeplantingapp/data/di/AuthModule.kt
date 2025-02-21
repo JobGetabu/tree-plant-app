@@ -2,6 +2,7 @@ package com.mobiletreeplantingapp.data.di
 
 import android.content.Context
 import com.google.firebase.auth.FirebaseAuth
+import com.mobiletreeplantingapp.data.datastore.ThemePreferences
 import com.mobiletreeplantingapp.data.repository.AuthRepositoryImpl
 import com.mobiletreeplantingapp.data.repository.EmailMatcherImpl
 import com.mobiletreeplantingapp.domain.matcher.EmailMatcher
