@@ -19,9 +19,9 @@ fun RootNavGraph(navController: NavHostController, context: Context) {
         startDestination = if(user == null) Graph.LOGIN else Graph.MAIN
     ) {
         loginGraph(navController = navController)
-
+        
         composable(route = Graph.MAIN) {
-            MainScreen()
+            MainScreen(rootNavController = navController)
         }
     }
 }

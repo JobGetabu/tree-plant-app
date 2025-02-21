@@ -1,51 +1,63 @@
 package com.mobiletreeplantingapp.navigation
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.mobiletreeplantingapp.ui.components.BottomNavBar
+import com.mobiletreeplantingapp.ui.screen.navigation.explore.ExploreScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.home.HomeScreen
+import com.mobiletreeplantingapp.ui.screen.navigation.mytrees.MyTreesScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsScreen
 
+sealed class Screen(val route: String) {
+    object Home : Screen("home")
+    object Map : Screen("map")
+    object TreeDatabase : Screen("tree_database")
+    object PlantingGuide : Screen("planting_guide")
+    object Community : Screen("community")
+    object Profile : Screen("profile")
+    object Settings : Screen("settings")
+    object Explore : Screen("explore")
+    object MyTrees : Screen("my_trees")
+}
+
 @Composable
-fun MainGraph(navController: NavHostController, innerPadding: PaddingValues) {
+fun MainGraph(
+    navController: NavHostController,
+    rootNavController: NavHostController,
+    innerPadding: PaddingValues
+) {
     NavHost(
         navController = navController,
         route = Graph.MAIN,
-        startDestination = BottomBar.Home.route
+        startDestination = Screen.Home.route
     ) {
-        loginGraph(navController = navController)
-
-        composable(route = BottomBar.Home.route) {
-            HomeScreen(innerPadding = innerPadding)
+        composable(route = Screen.Home.route) {
+            HomeScreen()
         }
-
-        composable(route = BottomBar.Settings.route) {
+        composable(route = Screen.Explore.route) {
+            ExploreScreen(innerPadding = innerPadding)
+        }
+        composable(route = Screen.MyTrees.route) {
+            MyTreesScreen(innerPadding = innerPadding)
+        }
+        composable(route = Screen.Profile.route) {
             SettingsScreen(
                 innerPadding = innerPadding,
                 navigateToLogin = {
-                    navController.navigateUp()
-                    navController.popBackStack()
-                    navController.navigate(AuthScreen.Login.route)
+                    rootNavController.navigate(Graph.LOGIN) {
+                        popUpTo(Graph.ROOT) { inclusive = true }
+                    }
                 }
             )
         }
@@ -53,75 +65,26 @@ fun MainGraph(navController: NavHostController, innerPadding: PaddingValues) {
 }
 
 @Composable
-fun MainScreen(navController: NavHostController = rememberNavController()) {
+fun MainScreen(rootNavController: NavHostController) {
+    val navController = rememberNavController() // This controller is for bottom nav only
+    
     Scaffold(
-        bottomBar = { BottomBar(navController = navController) }
+        bottomBar = { BottomNavBar(navController = navController) }
     ) { innerPadding ->
-        MainGraph(navController = navController, innerPadding = innerPadding)
-    }
-}
-
-@Composable
-fun BottomBar(navController: NavHostController) {
-    val screens = listOf(
-        BottomBar.Home,
-        BottomBar.Settings
-    )
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
-
-    val bottomBarDestination = screens.any { it.route == currentDestination?.route }
-    if (bottomBarDestination) {
-        NavigationBar(
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.surface
-        ) {
-            screens.forEach { screen ->
-                AddItem(
-                    screen = screen,
-                    currentDestination = currentDestination,
-                    navController = navController
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun RowScope.AddItem(
-    screen: BottomBar,
-    currentDestination: NavDestination?,
-    navController: NavHostController
-) {
-    NavigationBarItem(
-        label = {
-            Text(
-                text = screen.title,
-                fontSize = 14.sp
-            )
-        },
-        icon = {
-            Icon(
-                imageVector = screen.icon,
-                contentDescription = screen.title,
-                modifier = Modifier.size(26.dp)
-            )
-        },
-        selected = currentDestination?.hierarchy?.any {
-            it.route == screen.route
-        } == true,
-        onClick = {
-            navController.navigate(screen.route) {
-                popUpTo(navController.graph.findStartDestination().id)
-                launchSingleTop = true
-            }
-        },
-        colors = NavigationBarItemDefaults.colors(
-            indicatorColor = MaterialTheme.colorScheme.surface,
-            selectedIconColor = MaterialTheme.colorScheme.onBackground,
-            selectedTextColor = MaterialTheme.colorScheme.onBackground,
-            unselectedIconColor = MaterialTheme.colorScheme.background,
-            unselectedTextColor = MaterialTheme.colorScheme.background
+        MainGraph(
+            navController = navController,
+            rootNavController = rootNavController, // Pass the root controller
+            innerPadding = innerPadding
         )
-    )
+    }
+}
+
+@Composable
+private fun PlaceholderScreen(text: String) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = text)
+    }
 }
