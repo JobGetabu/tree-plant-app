@@ -13,23 +13,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.mobiletreeplantingapp.ui.components.BottomNavBar
 import com.mobiletreeplantingapp.ui.screen.navigation.explore.ExploreScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.home.HomeScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.mytrees.MyTreesScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsScreen
-
-sealed class Screen(val route: String) {
-    object Home : Screen("home")
-    object Map : Screen("map")
-    object TreeDatabase : Screen("tree_database")
-    object PlantingGuide : Screen("planting_guide")
-    object Community : Screen("community")
-    object Profile : Screen("profile")
-    object Settings : Screen("settings")
-    object Explore : Screen("explore")
-    object MyTrees : Screen("my_trees")
-}
+import com.mobiletreeplantingapp.navigation.Screen
 
 @Composable
 fun MainGraph(

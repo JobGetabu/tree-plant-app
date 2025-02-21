@@ -17,12 +17,16 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.mobiletreeplantingapp.data.datastore.OnboardingPreferences
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     
     @Inject
     lateinit var themePreferences: ThemePreferences
+    
+    @Inject
+    lateinit var onboardingPreferences: OnboardingPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -48,7 +52,11 @@ class MainActivity : ComponentActivity() {
                     ThemeMode.SYSTEM -> isSystemInDarkTheme()
                 }
             ) {
-                RootNavGraph(navController = rememberNavController(), context = this)
+                RootNavGraph(
+                    navController = rememberNavController(), 
+                    context = this,
+                    onboardingPreferences = onboardingPreferences
+                )
             }
         }
     }

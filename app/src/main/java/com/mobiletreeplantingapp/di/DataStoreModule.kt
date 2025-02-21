@@ -2,6 +2,7 @@ package com.mobiletreeplantingapp.di
 
 import android.content.Context
 import com.mobiletreeplantingapp.data.datastore.ThemePreferences
+import com.mobiletreeplantingapp.data.datastore.OnboardingPreferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,5 +18,11 @@ object DataStoreModule {
     @Singleton
     fun provideThemePreferences(@ApplicationContext context: Context): ThemePreferences {
         return ThemePreferences(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOnboardingPreferences(@ApplicationContext context: Context): OnboardingPreferences {
+        return OnboardingPreferences(context)
     }
 } 
