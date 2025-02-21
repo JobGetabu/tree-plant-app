@@ -1,0 +1,519 @@
+{
+  "project_info": {
+    "project_number": "992539014106",
+    "firebase_url": "https://fir-nodejs-api.firebaseio.com",
+    "project_id": "fir-nodejs-api",
+    "storage_bucket": "fir-nodejs-api.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992539014106:android:91eecf4730fc920b",
+        "android_client_info": {
+          "package_name": "com.firebase.uidemo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992539014106-dpvlpleffupmu4gpg2391g3p51b8akhd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.firebase.uidemo",
+            "certificate_hash": "aa27f801cd0726dbca1ca3c387001635192bed47"
+          }
+        },
+        {
+          "client_id": "992539014106-ntqt1aoubmi5bdkb6gbtjhd7sjji9au6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.firebase.uidemo",
+            "certificate_hash": "1433611c024becd2b41f42ed55b53d21e9caead2"
+          }
+        },
+        {
+          "client_id": "992539014106-ve8402l0atarvitjfpn3be7fvk9qhdr9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkG50iSDKNkzehLJI1XqJwMGTsGKiiMn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992539014106-076o0bdf0fln9givf0jk3g05i3eme7tn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "992539014106-ovgurm15k38gcaqg9nsft9t7eiosfvkn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "shop.zetu"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992539014106:android:c1f0f09aa42eba16",
+        "android_client_info": {
+          "package_name": "com.google.firebase.example.fireeats"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992539014106-73ia6r15u07ncrasu36kcihgr00dvffq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.google.firebase.example.fireeats",
+            "certificate_hash": "1433611c024becd2b41f42ed55b53d21e9caead2"
+          }
+        },
+        {
+          "client_id": "992539014106-ve8402l0atarvitjfpn3be7fvk9qhdr9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkG50iSDKNkzehLJI1XqJwMGTsGKiiMn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992539014106-076o0bdf0fln9givf0jk3g05i3eme7tn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "992539014106-ovgurm15k38gcaqg9nsft9t7eiosfvkn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "shop.zetu"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992539014106:android:72013747e5bba2a2",
+        "android_client_info": {
+          "package_name": "com.google.firebase.ml.md"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992539014106-ve8402l0atarvitjfpn3be7fvk9qhdr9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkG50iSDKNkzehLJI1XqJwMGTsGKiiMn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992539014106-076o0bdf0fln9givf0jk3g05i3eme7tn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "992539014106-ovgurm15k38gcaqg9nsft9t7eiosfvkn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "shop.zetu"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992539014106:android:78824500bd1cc1324fc6e3",
+        "android_client_info": {
+          "package_name": "com.google.firebase.quickstart.deeplinks"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992539014106-ve8402l0atarvitjfpn3be7fvk9qhdr9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkG50iSDKNkzehLJI1XqJwMGTsGKiiMn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992539014106-076o0bdf0fln9givf0jk3g05i3eme7tn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "992539014106-ovgurm15k38gcaqg9nsft9t7eiosfvkn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "shop.zetu"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992539014106:android:09546560b4505797",
+        "android_client_info": {
+          "package_name": "com.google.firebase.samples.apps.mlkit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992539014106-ve8402l0atarvitjfpn3be7fvk9qhdr9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkG50iSDKNkzehLJI1XqJwMGTsGKiiMn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992539014106-076o0bdf0fln9givf0jk3g05i3eme7tn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "992539014106-ovgurm15k38gcaqg9nsft9t7eiosfvkn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "shop.zetu"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992539014106:android:caf1105b60c025b94fc6e3",
+        "android_client_info": {
+          "package_name": "com.mobiletreeplantingapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992539014106-llsbme46g30gligilbi3eq2vg4ae5gt7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mobiletreeplantingapp",
+            "certificate_hash": "283f1ef57e820607a949f461468206e3fbd718f4"
+          }
+        },
+        {
+          "client_id": "992539014106-ve8402l0atarvitjfpn3be7fvk9qhdr9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkG50iSDKNkzehLJI1XqJwMGTsGKiiMn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992539014106-076o0bdf0fln9givf0jk3g05i3eme7tn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "992539014106-ovgurm15k38gcaqg9nsft9t7eiosfvkn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "shop.zetu"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992539014106:android:fe4ef1f8bf1398f84fc6e3",
+        "android_client_info": {
+          "package_name": "com.soko"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992539014106-1m69ctdc69mjs1ero86i7fekkfi6uhol.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.soko",
+            "certificate_hash": "79409cc0a2987bce8de4e2c30f7057d38451d93d"
+          }
+        },
+        {
+          "client_id": "992539014106-3p6o4j2jt8v73s4gddhdoj0vmsaogg6n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.soko",
+            "certificate_hash": "283f1ef57e820607a949f461468206e3fbd718f4"
+          }
+        },
+        {
+          "client_id": "992539014106-ve8402l0atarvitjfpn3be7fvk9qhdr9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkG50iSDKNkzehLJI1XqJwMGTsGKiiMn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992539014106-076o0bdf0fln9givf0jk3g05i3eme7tn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "992539014106-ovgurm15k38gcaqg9nsft9t7eiosfvkn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "shop.zetu"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992539014106:android:9b79ce93462d00bc",
+        "android_client_info": {
+          "package_name": "com.thomaskioko.paybillmanager.mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992539014106-ve8402l0atarvitjfpn3be7fvk9qhdr9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkG50iSDKNkzehLJI1XqJwMGTsGKiiMn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992539014106-076o0bdf0fln9givf0jk3g05i3eme7tn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "992539014106-ovgurm15k38gcaqg9nsft9t7eiosfvkn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "shop.zetu"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992539014106:android:e1223d69fe61bf254fc6e3",
+        "android_client_info": {
+          "package_name": "com.treemap"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992539014106-f1damlioksp3qvon35589c0mbjig7ttn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.treemap",
+            "certificate_hash": "283f1ef57e820607a949f461468206e3fbd718f4"
+          }
+        },
+        {
+          "client_id": "992539014106-ve8402l0atarvitjfpn3be7fvk9qhdr9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkG50iSDKNkzehLJI1XqJwMGTsGKiiMn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992539014106-076o0bdf0fln9givf0jk3g05i3eme7tn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "992539014106-ovgurm15k38gcaqg9nsft9t7eiosfvkn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "shop.zetu"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992539014106:android:0c159b565209f30b",
+        "android_client_info": {
+          "package_name": "com.wahi"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992539014106-japufit3jin941t4cecgv0nj567m6iag.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wahi",
+            "certificate_hash": "79409cc0a2987bce8de4e2c30f7057d38451d93d"
+          }
+        },
+        {
+          "client_id": "992539014106-jstcdrvjoj89goit38tdvv9hn6kfnaj0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wahi",
+            "certificate_hash": "9ba31ba80e8ae5b9cf40c8eb8fb3de2180109e0f"
+          }
+        },
+        {
+          "client_id": "992539014106-k5n2j6b3hgrnecfkkdeh2liij163544j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wahi",
+            "certificate_hash": "55d158b108521844a0ca466de3d6a66e14f9816b"
+          }
+        },
+        {
+          "client_id": "992539014106-lveq58cffa9rtg2390psr3l5olho7tt1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wahi",
+            "certificate_hash": "1433611c024becd2b41f42ed55b53d21e9caead2"
+          }
+        },
+        {
+          "client_id": "992539014106-t3oiaspe8hr73fs22835d84flqv45rlq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wahi",
+            "certificate_hash": "283f1ef57e820607a949f461468206e3fbd718f4"
+          }
+        },
+        {
+          "client_id": "992539014106-ve8402l0atarvitjfpn3be7fvk9qhdr9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkG50iSDKNkzehLJI1XqJwMGTsGKiiMn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992539014106-076o0bdf0fln9givf0jk3g05i3eme7tn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "992539014106-ovgurm15k38gcaqg9nsft9t7eiosfvkn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "shop.zetu"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992539014106:android:edbc71cf71b1beb74fc6e3",
+        "android_client_info": {
+          "package_name": "shop.zetu"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992539014106-67bd8iprbsme1p3sme3mt7dsr3lek0u3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "shop.zetu",
+            "certificate_hash": "43fe1cf16400c1e3213a95b35df37eb659b42952"
+          }
+        },
+        {
+          "client_id": "992539014106-6skdi952gitf2p1r7eihlslonir3qd35.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "shop.zetu",
+            "certificate_hash": "283f1ef57e820607a949f461468206e3fbd718f4"
+          }
+        },
+        {
+          "client_id": "992539014106-ve8402l0atarvitjfpn3be7fvk9qhdr9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkG50iSDKNkzehLJI1XqJwMGTsGKiiMn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992539014106-076o0bdf0fln9givf0jk3g05i3eme7tn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "992539014106-ovgurm15k38gcaqg9nsft9t7eiosfvkn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "shop.zetu"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
