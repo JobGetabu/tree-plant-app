@@ -10,14 +10,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.mobiletreeplantingapp.ui.screen.navigation.detail.AreaDetailScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.explore.ExploreScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.home.HomeScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.mytrees.MyTreesScreen
+import com.mobiletreeplantingapp.ui.screen.navigation.saved.SavedAreasScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsScreen
-import com.mobiletreeplantingapp.navigation.Screen
 
 @Composable
 fun MainGraph(
@@ -37,7 +40,11 @@ fun MainGraph(
             ExploreScreen(innerPadding = innerPadding)
         }
         composable(route = Screen.MyTrees.route) {
-            MyTreesScreen(innerPadding = innerPadding)
+            SavedAreasScreen(
+                onAreaClick = { areaId ->
+                    navController.navigate(Screen.AreaDetail.createRoute(areaId))
+                }
+            )
         }
         composable(route = Screen.Profile.route) {
             SettingsScreen(
@@ -46,6 +53,23 @@ fun MainGraph(
                     rootNavController.navigate(Graph.LOGIN) {
                         popUpTo(Graph.ROOT) { inclusive = true }
                     }
+                }
+            )
+        }
+        
+        // Update area detail route
+        composable(
+            route = Screen.AreaDetail.route,
+            arguments = listOf(
+                navArgument("areaId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val areaId = backStackEntry.arguments?.getString("areaId")
+                ?: return@composable
+            AreaDetailScreen(
+                areaId = areaId,
+                onNavigateBack = {
+                    navController.navigateUp()
                 }
             )
         }

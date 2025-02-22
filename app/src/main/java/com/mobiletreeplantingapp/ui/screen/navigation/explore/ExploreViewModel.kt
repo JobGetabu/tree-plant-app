@@ -1,6 +1,5 @@
 package com.mobiletreeplantingapp.ui.screen.navigation.explore
 
-import android.location.Location
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -12,15 +11,22 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.mobiletreeplantingapp.data.repository.GeographicalDataRepository
+import com.mobiletreeplantingapp.data.repository.FirestoreRepository
 import com.mobiletreeplantingapp.data.model.SoilProperties
+import com.mobiletreeplantingapp.data.model.TreeRecommendation
+import com.mobiletreeplantingapp.data.model.SavedArea
 import kotlinx.coroutines.flow.collectLatest
 import com.mobiletreeplantingapp.data.model.GeographicalData
 import com.mobiletreeplantingapp.data.repository.CoroutineDispatchers
 import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.GeoPoint
 
 @HiltViewModel
 class ExploreViewModel @Inject constructor(
     private val geographicalDataRepository: GeographicalDataRepository,
+    private val firestoreRepository: FirestoreRepository,
+    private val auth: FirebaseAuth,
     private val dispatchers: CoroutineDispatchers
 ) : ViewModel() {
     var state by mutableStateOf(ExploreState())
@@ -38,7 +44,8 @@ class ExploreViewModel @Inject constructor(
                 state = state.copy(
                     polygonPoints = emptyList(),
                     areaSize = 0.0,
-                    isAreaFinalized = false
+                    isAreaFinalized = false,
+                    showBottomSheet = false
                 )
             }
             is ExploreEvent.UpdateUserLocation -> {
@@ -46,11 +53,36 @@ class ExploreViewModel @Inject constructor(
             }
             is ExploreEvent.FinalizeArea -> {
                 if (state.polygonPoints.size >= 3) {
+                    state = state.copy(showBottomSheet = true)
                     finalizeArea()
                 }
             }
             is ExploreEvent.ToggleBottomSheet -> {
-                state = state.copy(isBottomSheetVisible = !state.isBottomSheetVisible)
+                if (state.isAreaFinalized) {
+                    state = state.copy(
+                        showBottomSheet = !state.showBottomSheet,
+                        showSaveDialog = false,
+                        areaName = ""
+                    )
+                } else {
+                    state = state.copy(
+                        showBottomSheet = false,
+                        showSaveDialog = false,
+                        areaName = ""
+                    )
+                }
+            }
+            is ExploreEvent.UpdateAreaName -> {
+                state = state.copy(areaName = event.name)
+            }
+            is ExploreEvent.ShowSaveDialog -> {
+                state = state.copy(showSaveDialog = true)
+            }
+            is ExploreEvent.DismissSaveDialog -> {
+                state = state.copy(showSaveDialog = false, areaName = "")
+            }
+            is ExploreEvent.SaveArea -> {
+                saveArea()
             }
         }
     }
@@ -111,5 +143,86 @@ class ExploreViewModel @Inject constructor(
         val lat = points.map { it.latitude }.average()
         val lng = points.map { it.longitude }.average()
         return LatLng(lat, lng)
+    }
+
+    private fun getTreeRecommendations(soilType: String, climateZone: String): List<TreeRecommendation> {
+        // This is a simplified version. You might want to move this to a separate repository
+        return when {
+            soilType == "Loam" && climateZone == "Tropical" -> listOf(
+                TreeRecommendation(
+                    species = "Acacia",
+                    suitabilityScore = 0.9f,
+                    description = "Fast-growing, drought-resistant tree",
+                    growthRate = "Fast",
+                    maintainanceLevel = "Low",
+                    soilPreference = "Adaptable to most soils",
+                    climatePreference = "Tropical and subtropical"
+                ),
+                // Add more recommendations based on conditions
+            )
+            // Add more conditions
+            else -> emptyList()
+        }
+    }
+
+    private fun saveArea() {
+        viewModelScope.launch(dispatchers.io) {
+            try {
+                Log.d("ExploreViewModel", "Starting to save area")
+                state = state.copy(isSaving = true)
+                
+                val currentUser = auth.currentUser
+                if (currentUser == null) {
+                    Log.e("ExploreViewModel", "No authenticated user found")
+                    throw Exception("User not authenticated")
+                }
+                Log.d("ExploreViewModel", "Current user: ${currentUser.uid}")
+
+                // Remove 'm' suffix and convert to Double
+                val elevation = try {
+                    state.altitude.removeSuffix("m").toDoubleOrNull() ?: 0.0
+                } catch (e: Exception) {
+                    Log.e("ExploreViewModel", "Error parsing elevation: ${state.altitude}", e)
+                    0.0
+                }
+
+                val area = SavedArea(
+                    userId = currentUser.uid,
+                    name = state.areaName,
+                    points = state.polygonPoints.map { GeoPoint(it.latitude, it.longitude) },
+                    areaSize = state.areaSize,
+                    soilType = state.soilType,
+                    elevation = elevation,
+                    climateZone = state.climateZone,
+                    timestamp = System.currentTimeMillis()
+                )
+                
+                Log.d("ExploreViewModel", "Created SavedArea object: $area")
+
+                firestoreRepository.saveArea(area).onSuccess {
+                    Log.d("ExploreViewModel", "Successfully saved area")
+                    state = state.copy(
+                        showSaveDialog = false,
+                        areaName = "",
+                        isSaving = false,
+                        error = null
+                    )
+                    // Clear the polygon after successful save
+                    onEvent(ExploreEvent.ClearPolygon)
+                }.onFailure { error ->
+                    Log.e("ExploreViewModel", "Error saving area", error)
+                    state = state.copy(
+                        error = "Failed to save area: ${error.message}",
+                        isSaving = false
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("ExploreViewModel", "Error in saveArea", e)
+                state = state.copy(
+                    error = "Error saving area: ${e.message}",
+                    isSaving = false
+                )
+            }
+        }
     }
 } 

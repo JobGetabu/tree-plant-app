@@ -21,6 +21,11 @@ fun BottomNavBar(navController: NavController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    // Hide bottom bar for detail screen
+    if (currentRoute?.startsWith("area_detail") == true) {
+        return
+    }
+
     NavigationBar {
         screens.forEach { screen ->
             NavigationBarItem(

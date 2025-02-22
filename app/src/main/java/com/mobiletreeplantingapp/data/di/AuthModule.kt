@@ -1,10 +1,13 @@
 package com.mobiletreeplantingapp.data.di
 
+//import FirestoreRepositoryImpl
 import android.content.Context
 import com.google.firebase.auth.FirebaseAuth
+//import com.google.firebase.firestore.FirebaseFirestore
 import com.mobiletreeplantingapp.data.datastore.ThemePreferences
 import com.mobiletreeplantingapp.data.repository.AuthRepositoryImpl
 import com.mobiletreeplantingapp.data.repository.EmailMatcherImpl
+//import com.mobiletreeplantingapp.data.repository.FirestoreRepository
 import com.mobiletreeplantingapp.domain.matcher.EmailMatcher
 import com.mobiletreeplantingapp.domain.repository.AuthRepository
 import com.mobiletreeplantingapp.domain.usecase.ForgotUseCases
@@ -31,13 +34,14 @@ object AuthModule {
 
     @Singleton
     @Provides
-    fun authRepositoryImpl(@ApplicationContext context: Context): AuthRepository {
+    fun provideAuthRepository(@ApplicationContext context: Context): AuthRepository {
         return AuthRepositoryImpl(context = context)
     }
 
     @Singleton
     @Provides
-    fun provideFirebaseAuth() = FirebaseAuth.getInstance()
+    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
 
     @Provides
     @Singleton

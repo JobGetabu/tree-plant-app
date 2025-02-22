@@ -1,9 +1,13 @@
 package com.mobiletreeplantingapp.di
 
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.mobiletreeplantingapp.data.remote.ElevationApiService
 import com.mobiletreeplantingapp.data.remote.SoilApiService
 import com.mobiletreeplantingapp.data.repository.GeographicalDataRepository
 import com.mobiletreeplantingapp.data.local.dao.GeographicalDataDao
+import com.mobiletreeplantingapp.data.repository.FirestoreRepository
+import com.mobiletreeplantingapp.data.repository.FirestoreRepositoryImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -72,4 +76,19 @@ object NetworkModule {
             elevationApiService
         )
     }
+
+
+
+    @Provides
+    @Singleton
+    fun provideFirebaseFirestore(): FirebaseFirestore {
+        return FirebaseFirestore.getInstance()
+    }
+
+    @Singleton
+    @Provides
+    fun provideFirestoreRepository(
+            firestore: FirebaseFirestore,
+            auth: FirebaseAuth
+    ): FirestoreRepository = FirestoreRepositoryImpl(firestore, auth)
 } 

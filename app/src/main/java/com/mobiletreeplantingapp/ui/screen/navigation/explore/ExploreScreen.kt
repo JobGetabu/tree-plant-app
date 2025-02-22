@@ -27,6 +27,8 @@ import com.google.accompanist.permissions.rememberPermissionState
 import androidx.core.content.ContextCompat
 import android.content.pm.PackageManager
 import android.util.Log
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import com.mobiletreeplantingapp.ui.screen.navigation.explore.components.AreaDetailsCard
 import androidx.compose.material.icons.filled.Landscape
 import androidx.compose.material.icons.filled.Terrain
@@ -44,7 +46,9 @@ fun ExploreScreen(
     val context = LocalContext.current
     val state = viewModel.state
     val cameraPositionState = rememberCameraPositionState()
-    val bottomSheetState = rememberModalBottomSheetState()
+    val bottomSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = false
+    )
     val locationPermissionState = rememberPermissionState(
         Manifest.permission.ACCESS_FINE_LOCATION
     )
@@ -68,6 +72,13 @@ fun ExploreScreen(
                     cameraPositionState.position = CameraPosition.fromLatLngZoom(latLng, 15f)
                 }
             }
+        }
+    }
+
+    // Handle bottom sheet dismissal
+    LaunchedEffect(bottomSheetState.currentValue) {
+        if (bottomSheetState.currentValue == SheetValue.Hidden) {
+            viewModel.onEvent(ExploreEvent.ToggleBottomSheet)
         }
     }
 
@@ -154,6 +165,14 @@ fun ExploreScreen(
                             Text("Soil Type: ${state.soilType}")
                             Text("Altitude: ${state.altitude}")
                             Text("Climate Zone: ${state.climateZone}")
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { viewModel.onEvent(ExploreEvent.ShowSaveDialog) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Save Area")
+                            }
                         }
                     }
                 }
@@ -203,10 +222,12 @@ fun ExploreScreen(
             }
         }
 
-        // Bottom sheet
-        if (state.showBottomSheet) {
+        // Only show bottom sheet if area is finalized and showBottomSheet is true
+        if (state.isAreaFinalized && state.showBottomSheet) {
             ModalBottomSheet(
-                onDismissRequest = { viewModel.onEvent(ExploreEvent.ToggleBottomSheet) },
+                onDismissRequest = { 
+                    viewModel.onEvent(ExploreEvent.ToggleBottomSheet)
+                },
                 sheetState = bottomSheetState,
                 containerColor = MaterialTheme.colorScheme.surface,
             ) {
@@ -214,6 +235,7 @@ fun ExploreScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp, vertical = 16.dp)
+                        .padding(bottom = 32.dp)
                 ) {
                     Text(
                         text = "Area Details",
@@ -253,10 +275,55 @@ fun ExploreScreen(
                             label = "Climate Zone",
                             value = state.climateZone
                         )
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = { viewModel.onEvent(ExploreEvent.ShowSaveDialog) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Save Area")
+                        }
+                        Spacer(modifier = Modifier.height(32.dp))
                     }
-                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
+        }
+
+        // Save dialog
+        if (state.showSaveDialog) {
+            AlertDialog(
+                onDismissRequest = { viewModel.onEvent(ExploreEvent.DismissSaveDialog) },
+                title = { Text("Save Area") },
+                text = {
+                    OutlinedTextField(
+                        value = state.areaName,
+                        onValueChange = { viewModel.onEvent(ExploreEvent.UpdateAreaName(it)) },
+                        label = { Text("Area Name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { viewModel.onEvent(ExploreEvent.SaveArea) },
+                        enabled = state.areaName.isNotBlank() && !state.isSaving
+                    ) {
+                        if (state.isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Text("Save")
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.onEvent(ExploreEvent.DismissSaveDialog) }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }
@@ -292,4 +359,5 @@ private fun DetailItem(
         }
     }
 }
+
 

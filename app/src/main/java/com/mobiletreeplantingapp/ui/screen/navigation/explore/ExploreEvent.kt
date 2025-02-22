@@ -8,4 +8,8 @@ sealed class ExploreEvent {
     data class UpdateUserLocation(val location: LatLng) : ExploreEvent()
     data object ToggleBottomSheet : ExploreEvent()
     data object FinalizeArea : ExploreEvent()
+    data class UpdateAreaName(val name: String) : ExploreEvent()
+    object ShowSaveDialog : ExploreEvent()
+    object DismissSaveDialog : ExploreEvent()
+    object SaveArea : ExploreEvent()
 } 

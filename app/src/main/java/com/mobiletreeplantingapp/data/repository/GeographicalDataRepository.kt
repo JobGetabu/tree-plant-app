@@ -23,34 +23,33 @@ class GeographicalDataRepository @Inject constructor(
         try {
             Log.d("GeoRepository", "Starting to fetch geographical data for $location")
             
-            // For testing, emit mock data immediately
-            val mockData = GeographicalData(
-                soilType = "Loam",
-                elevation = 1234.0,
-                climateZone = determineClimateZone(location.latitude)
-            )
-            
-            Log.d("GeoRepository", "Emitting mock data: $mockData")
-            emit(Result.success(mockData))
+            // Fetch from API directly
+            Log.d("GeoRepository", "Fetching from API")
+            val locationString = "${location.latitude},${location.longitude}"
+            val elevationResponse = elevationApiService.getElevation(locationString)
+            Log.d("GeoRepository", "Got elevation response: ${elevationResponse.isSuccessful}")
 
-            // Cache the mock data
-            try {
-                geographicalDataDao.safeInsertGeographicalData(
-                    GeographicalDataEntity(
-                        id = "${location.latitude},${location.longitude}",
-                        latitude = location.latitude,
-                        longitude = location.longitude,
-                        soilType = mockData.soilType,
-                        elevation = mockData.elevation,
-                        climateZone = mockData.climateZone
-                    )
+            if (elevationResponse.isSuccessful && elevationResponse.body() != null) {
+                val elevation = elevationResponse.body()!!.results.firstOrNull()?.elevation
+                    ?: throw Exception("No elevation data available")
+                Log.d("GeoRepository", "Elevation: $elevation")
+                
+                val climateZone = determineClimateZone(location.latitude)
+                Log.d("GeoRepository", "Climate zone: $climateZone")
+
+                val geographicalData = GeographicalData(
+                    soilType = "Loam", // We'll implement soil API later
+                    elevation = elevation,
+                    climateZone = climateZone
                 )
-                Log.d("GeoRepository", "Cached mock data successfully")
-            } catch (e: Exception) {
-                Log.e("GeoRepository", "Error caching data", e)
-                // Continue without caching
-            }
 
+                Log.d("GeoRepository", "Emitting success result")
+                emit(Result.success(geographicalData))
+            } else {
+                val errorBody = elevationResponse.errorBody()?.string()
+                Log.e("GeoRepository", "Failed to fetch elevation data: $errorBody")
+                throw Exception("Failed to fetch elevation data: $errorBody")
+            }
         } catch (e: Exception) {
             Log.e("GeoRepository", "Error in getGeographicalData", e)
             emit(Result.failure(e))
@@ -66,11 +65,12 @@ class GeographicalDataRepository @Inject constructor(
     }
 
     private fun determineClimateZone(latitude: Double): String {
-        return when (abs(latitude)) {
-            in 0.0..23.5 -> "Tropical"
-            in 23.5..35.0 -> "Subtropical"
-            in 35.0..66.5 -> "Temperate"
-            else -> "Polar"
+        return when {
+            latitude >= 66.5 -> "Arctic"
+            latitude >= 23.5 -> "Temperate"
+            latitude >= -23.5 -> "Tropical"
+            latitude >= -66.5 -> "Temperate"
+            else -> "Antarctic"
         }
     }
 

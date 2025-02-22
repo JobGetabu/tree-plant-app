@@ -48,4 +48,5 @@ object Graph {
     const val ONBOARDING = "onboarding_graph"
     const val LOGIN = "login_graph"
     const val MAIN = "main_graph"
+    const val DETAILS = "details_graph"
 }
