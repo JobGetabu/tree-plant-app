@@ -19,6 +19,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.mobiletreeplantingapp.data.model.SavedTree
 import com.google.firebase.firestore.DocumentSnapshot
+import com.mobiletreeplantingapp.data.model.UserStats
 
 @Singleton
 class FirestoreRepositoryImpl @Inject constructor(
@@ -111,8 +112,6 @@ class FirestoreRepositoryImpl @Inject constructor(
 
         awaitClose { listener.remove() }
     }
-
-
 
     override fun getGuideSteps(species: String): List<GuideStep> {
         // This is a simplified version. In a real app, you might want to fetch this from Firestore
@@ -337,6 +336,35 @@ class FirestoreRepositoryImpl @Inject constructor(
             trySend(Result.failure(e))
             close(e)
         }
+    }
+
+    override fun getUserStats(): Flow<Result<UserStats>> = callbackFlow {
+        val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not logged in")
+        
+        val listener = firestore.collection("users")
+            .document(userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(Result.failure(error))
+                    return@addSnapshotListener
+                }
+
+                if (snapshot == null || !snapshot.exists()) {
+                    trySend(Result.success(UserStats()))
+                    return@addSnapshotListener
+                }
+
+                val stats = UserStats(
+                    treesPlanted = snapshot.getLong("treesPlanted")?.toInt() ?: 0,
+                    co2Offset = snapshot.getLong("co2Offset")?.toInt() ?: 0,
+                    totalArea = snapshot.getDouble("totalArea") ?: 0.0,
+                    lastPlantingDate = snapshot.getTimestamp("lastPlantingDate")?.toDate()?.time
+                )
+                
+                trySend(Result.success(stats))
+            }
+
+        awaitClose { listener.remove() }
     }
 
     private fun DocumentSnapshot.toTreeProgress(): TreeProgress {

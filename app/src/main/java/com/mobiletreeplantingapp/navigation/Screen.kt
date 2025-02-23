@@ -1,16 +1,20 @@
 package com.mobiletreeplantingapp.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Forest
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Landscape
 import androidx.compose.material.icons.filled.Park
+import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Forest
+import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Landscape
 import androidx.compose.material.icons.outlined.Park
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -96,4 +100,15 @@ sealed class Screen(
     ) {
         fun createRoute(areaId: String) = "area_detail/$areaId"
     }
+
+    object Article : Screen("article/{articleId}", "Article", Icons.Default.Article, Icons.Outlined.Article) {
+        fun createRoute(articleId: String) = "article/$articleId"
+    }
+
+    object Forum : Screen("forum", "Forum", Icons.Default.Forum, Icons.Outlined.Forum)
+    object ForumPost : Screen("forum_post/{postId}", "Post", Icons.Default.Forum, Icons.Outlined.Forum) {
+        fun createRoute(postId: String) = "forum_post/$postId"
+    }
+
+    object AllArticles : Screen("all_articles", "All Articles", Icons.Filled.Article, Icons.Outlined.Article)
 } 

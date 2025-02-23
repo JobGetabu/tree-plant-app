@@ -2,18 +2,28 @@ package com.mobiletreeplantingapp.ui.screen.navigation.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Comment
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -24,23 +34,44 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.mobiletreeplantingapp.R
+import com.mobiletreeplantingapp.data.model.Article
+import com.mobiletreeplantingapp.data.model.ForumPost
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.mobiletreeplantingapp.ui.component.ArticleListItem
+import com.mobiletreeplantingapp.ui.util.formatRelativeTime
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel = hiltViewModel(),
+    onNavigateToArticle: (String) -> Unit,
+    onNavigateToForum: () -> Unit,
+    onNavigateToAllArticles: () -> Unit,
+    onNavigateToForumPost: (String) -> Unit
 ) {
+    val state = viewModel.state
+
+    LaunchedEffect(Unit) {
+        // Comment this out after seeding the data
+        // viewModel.seedSampleData()
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
@@ -67,7 +98,7 @@ fun HomeScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF2E7D32) // Dark green color
+                containerColor = MaterialTheme.colorScheme.primaryContainer
             )
         ) {
             Row(
@@ -78,79 +109,59 @@ fun HomeScreen(
             ) {
                 StatColumn(
                     title = "Trees Planted",
-                    value = "12"
+                    value = state.treesPlanted.toString()
                 )
                 Divider(
                     modifier = Modifier
                         .height(40.dp)
                         .width(1.dp)
-                        .background(Color.White.copy(alpha = 0.3f))
+                        .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f))
                 )
                 StatColumn(
                     title = "CO₂ Offset",
-                    value = "240kg"
+                    value = "${state.co2Offset}kg"
                 )
             }
         }
 
-        // Map Preview
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .padding(16.dp)
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                // Map preview will be implemented later
-                Image(
-                    painter = painterResource(id = R.drawable.img2),
-                    contentDescription = "Map Preview",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-                TextButton(
-                    onClick = { /* TODO */ },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(8.dp)
-                ) {
-                    Text("View Full Map")
-                }
-            }
-        }
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Recent Activity
-        Text(
-            text = "Recent Activity",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        
-        LazyRow(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(2) {
-                RecentActivityCard()
-            }
-        }
-
-        // Action Buttons
+        // Featured Articles
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            ActionButton(
-                text = "New Planting",
-                modifier = Modifier.weight(1f)
+            Text(
+                text = "Featured Articles",
+                style = MaterialTheme.typography.titleMedium
             )
-            ActionButton(
-                text = "My Trees",
-                modifier = Modifier.weight(1f)
+            TextButton(onClick = onNavigateToAllArticles) {
+                Text("View All")
+            }
+        }
+
+        // Articles List
+        state.latestArticles.take(3).forEach { article ->
+            ArticleListItem(
+                article = article,
+                onClick = { onNavigateToArticle(article.id) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             )
         }
+
+        
+        // Forum Preview
+        ForumPreview(
+            posts = state.latestPosts,
+            onViewAllClick = onNavigateToForum,
+            onPostClick = onNavigateToForumPost,
+            modifier = Modifier.padding(16.dp)
+        )
     }
 }
 
@@ -176,51 +187,101 @@ private fun StatColumn(
 }
 
 @Composable
-private fun RecentActivityCard() {
-    Card(
-        modifier = Modifier
-            .width(160.dp)
-            .height(180.dp)
-    ) {
-        Column {
-            Image(
-                painter = painterResource(id = R.drawable.img1),
-                contentDescription = "Oak Tree Planted",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
-                contentScale = ContentScale.Crop
+private fun ForumPreview(
+    posts: List<ForumPost>,
+    onViewAllClick: () -> Unit,
+    onPostClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Community Forum",
+                style = MaterialTheme.typography.titleMedium
             )
-            Column(
-                modifier = Modifier.padding(8.dp)
-            ) {
-                Text(
-                    text = "Oak Tree Planted",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "2 days ago",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            TextButton(onClick = onViewAllClick) {
+                Text("View All")
             }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        posts.take(2).forEach { post ->
+            ForumPostItem(
+                post = post,
+                onClick = { onPostClick(post.id) },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
 
 @Composable
-private fun ActionButton(
-    text: String,
+private fun ForumPostItem(
+    post: ForumPost,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Button(
-        onClick = { /* TODO */ },
-        modifier = modifier,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface
-        )
+    Card(
+        modifier = modifier.clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Text(text)
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = post.title,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "by ${post.authorName}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.ThumbUp,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${post.upvotes}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Comment,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${post.commentCount}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+        }
     }
 } 

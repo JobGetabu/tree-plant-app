@@ -135,4 +135,10 @@ dependencies {
     // OkHttp Logging Interceptor
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.0")
     implementation ("io.coil-kt:coil-compose:2.1.0")
+
+    implementation ("io.noties.markwon:core:4.6.2")
+    implementation ("io.noties.markwon:ext-strikethrough:4.6.2")
+    implementation ("io.noties.markwon:ext-tables:4.6.2")
+    implementation ("io.noties.markwon:image-coil:4.6.2")
+    implementation ("io.noties.markwon:linkify:4.6.2")
 }

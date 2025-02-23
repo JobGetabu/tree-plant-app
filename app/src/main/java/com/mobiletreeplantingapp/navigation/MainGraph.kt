@@ -15,6 +15,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.mobiletreeplantingapp.ui.screen.article.ArticleScreen
+import com.mobiletreeplantingapp.ui.screen.forum.ForumScreen
+import com.mobiletreeplantingapp.ui.screen.forum.post.ForumPostScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.detail.AreaDetailScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.explore.ExploreScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.home.HomeScreen
@@ -22,6 +25,7 @@ import com.mobiletreeplantingapp.ui.screen.navigation.mytrees.MyTreesScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.saved.SavedAreasScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsScreen
 import com.mobiletreeplantingapp.ui.screen.planting.PlantingGuideScreen
+import com.mobiletreeplantingapp.ui.screen.article.AllArticlesScreen
 
 @Composable
 fun MainGraph(
@@ -31,12 +35,62 @@ fun MainGraph(
 ) {
     NavHost(
         navController = navController,
-        route = Graph.MAIN,
-        startDestination = Screen.Home.route
+        startDestination = Screen.Home.route,
+        modifier = Modifier.padding(innerPadding)
     ) {
-        composable(route = Screen.Home.route) {
-            HomeScreen()
+        composable(Screen.Home.route) {
+            HomeScreen(
+                onNavigateToArticle = { articleId ->
+                    navController.navigate(Screen.Article.createRoute(articleId))
+                },
+                onNavigateToForum = {
+                    navController.navigate(Screen.Forum.route)
+                },
+                onNavigateToAllArticles = {
+                    navController.navigate(Screen.AllArticles.route)
+                },
+                onNavigateToForumPost = { postId ->
+                    navController.navigate(Screen.ForumPost.createRoute(postId))
+                }
+            )
         }
+
+        // Add new routes for articles and forum
+        composable(
+            route = Screen.Article.route,
+            arguments = listOf(
+                navArgument("articleId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val articleId = backStackEntry.arguments?.getString("articleId") ?: return@composable
+            ArticleScreen(
+                articleId = articleId,
+                onNavigateBack = { navController.navigateUp() }
+            )
+        }
+
+        composable(Screen.Forum.route) {
+            ForumScreen(
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToPost = { postId ->
+                    navController.navigate(Screen.ForumPost.createRoute(postId))
+                }
+            )
+        }
+
+        composable(
+            route = Screen.ForumPost.route,
+            arguments = listOf(
+                navArgument("postId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val postId = backStackEntry.arguments?.getString("postId") ?: return@composable
+            ForumPostScreen(
+                postId = postId,
+                onNavigateBack = { navController.navigateUp() }
+            )
+        }
+
         composable(route = Screen.Explore.route) {
             ExploreScreen(
                 innerPadding = innerPadding,
@@ -93,6 +147,16 @@ fun MainGraph(
                 species = species,
                 onNavigateBack = {
                     navController.navigateUp()
+                }
+            )
+        }
+
+        // Add the AllArticles route
+        composable(Screen.AllArticles.route) {
+            AllArticlesScreen(
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToArticle = { articleId ->
+                    navController.navigate(Screen.Article.createRoute(articleId))
                 }
             )
         }
