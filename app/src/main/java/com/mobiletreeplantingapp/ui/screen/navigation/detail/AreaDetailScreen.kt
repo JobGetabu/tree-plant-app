@@ -52,7 +52,7 @@ fun AreaDetailScreen(
     val state = viewModel.state
 
     LaunchedEffect(areaId) {
-        viewModel.loadAreaDetails(areaId)
+        viewModel.loadArea(areaId) // Load area details first
     }
 
     Scaffold(
@@ -72,11 +72,7 @@ fun AreaDetailScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (state.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            } else if (state.error != null) {
+            if (state.error != null) {
                 Text(
                     text = state.error!!,
                     color = MaterialTheme.colorScheme.error,
@@ -86,26 +82,50 @@ fun AreaDetailScreen(
                 )
             } else {
                 state.area?.let { area ->
+                    // Trigger tree recommendations loading after area is loaded
+                    LaunchedEffect(area) {
+                        viewModel.loadTreeRecommendations(area)
+                    }
+
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp)
                     ) {
-                        AreaMap(area = area)
+                        // Always show the map and area info first
+                        AreaMap(
+                            area = area,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
                         AreaInfoCard(area)
+                        Spacer(modifier = Modifier.height(16.dp))
+
                         Text(
                             text = "Recommended Trees",
                             style = MaterialTheme.typography.titleLarge,
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
-                        if (state.treeRecommendations.isNotEmpty()) {
-                            TreeRecommendationsList(state.treeRecommendations)
+
+                        if (state.isLoadingRecommendations) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
                         } else {
-                            Text(
-                                text = "Request timed out. No suitable trees found.",
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.padding(16.dp)
-                            )
+                            if (state.treeRecommendations.isNotEmpty()) {
+                                TreeRecommendationsList(state.treeRecommendations)
+                            } else {
+                                Text(
+                                    text = "No suitable trees found.",
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
                         }
                     }
                 }

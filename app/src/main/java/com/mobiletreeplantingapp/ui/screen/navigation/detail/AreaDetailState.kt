@@ -9,5 +9,7 @@ data class AreaDetailState(
     val soilData: SoilData? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
-    val treeRecommendations: List<TreeRecommendation> = emptyList()
-)
+    val treeRecommendations: List<TreeRecommendation> = emptyList(),
+    val isLoadingRecommendations: Boolean = false,
+    val isLoadingArea: Boolean = false,
+    )

@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
+import com.mobiletreeplantingapp.data.model.SavedArea
 import com.mobiletreeplantingapp.data.model.SoilData
 import com.mobiletreeplantingapp.data.model.TreeRecommendation
 import com.mobiletreeplantingapp.data.remote.SoilApiService
@@ -27,82 +28,94 @@ class AreaDetailViewModel @Inject constructor(
     var state by mutableStateOf(AreaDetailState())
         private set
 
-    fun loadAreaDetails(areaId: String) {
+    fun loadArea(areaId: String) {
         viewModelScope.launch {
-            state = state.copy(isLoading = true)
+            state = state.copy(isLoadingArea = true)
             firestoreRepository.getAreaById(areaId)
                 .catch { e ->
                     state = state.copy(
                         error = e.message,
-                        isLoading = false
+                        isLoadingArea = false
                     )
                 }
                 .collect { result ->
                     result.onSuccess { area ->
-                        // Get the centroid of the area for soil data
-                        val centroid = area.points.let { points ->
-                            val lat = points.map { it.latitude }.average()
-                            val lng = points.map { it.longitude }.average()
-                            LatLng(lat, lng)
-                        }
-                        
-                        try {
-                            val soilResponse = soilApiService.getSoilData(
-                                latitude = centroid.latitude,
-                                longitude = centroid.longitude
-                            )
-
-                            if (soilResponse.isSuccessful && soilResponse.body() != null) {
-                                val soilData = soilResponse.body()!!
-                                val recommendations = getTreeRecommendations(
-                                    soilData = soilData,
-                                    elevation = area.elevation,
-                                    climateZone = area.climateZone
-                                )
-                                
-                                state = state.copy(
-                                    area = area,
-                                    soilData = soilData,
-                                    treeRecommendations = recommendations,
-                                    isLoading = false,
-                                    error = null
-                                )
-                            } else {
-                                throw Exception("Failed to fetch soil data")
-                            }
-                        } catch (e: Exception) {
-                            // Handle timeout specifically
-                            if (e is java.net.SocketTimeoutException || e.message?.contains("No soil data available") == true) {
-                                state = state.copy(
-                                    area = area,
-                                    treeRecommendations = listOf(
-                                        TreeRecommendation(
-                                            species = "No Recommendations",
-                                            suitabilityScore = 0f,
-                                            description = "Request timed out. No suitable trees found.",
-                                            growthRate = "-",
-                                            maintainanceLevel = "-",
-                                            soilPreference = "-",
-                                            climatePreference = "-"
-                                        )
-                                    ),
-                                    isLoading = false
-                                )
-                            } else {
-                                state = state.copy(
-                                    area = area,
-                                    error = "Error loading soil data: ${e.message}",
-                                    isLoading = false
-                                )
-                            }
-                        }
+                        state = state.copy(
+                            area = area,
+                            isLoadingArea = false,
+                            error = null
+                        )
                     }.onFailure { error ->
                         state = state.copy(
                             error = error.message,
-                            isLoading = false
+                            isLoadingArea = false
                         )
                     }
                 }
+        }
+    }
+
+    fun loadTreeRecommendations(area: SavedArea) {
+        viewModelScope.launch {
+            state = state.copy(isLoadingRecommendations = true)
+            
+            try {
+                // Get the centroid of the area for soil data
+                val centroid = area.points.let { points ->
+                    val lat = points.map { it.latitude }.average()
+                    val lng = points.map { it.longitude }.average()
+                    LatLng(lat, lng)
+                }
+                
+                val soilResponse = soilApiService.getSoilData(
+                    latitude = centroid.latitude,
+                    longitude = centroid.longitude
+                )
+
+                if (soilResponse.isSuccessful && soilResponse.body() != null) {
+                    val soilData = soilResponse.body()!!
+                    val recommendations = getTreeRecommendations(
+                        soilData = soilData,
+                        elevation = area.elevation,
+                        climateZone = area.climateZone
+                    )
+                    
+                    state = state.copy(
+                        soilData = soilData,
+                        treeRecommendations = recommendations,
+                        isLoadingRecommendations = false,
+                        error = null
+                    )
+                } else {
+                    throw Exception("Failed to fetch soil data")
+                }
+            } catch (e: Exception) {
+                handleRecommendationError(e, area)
+            }
+        }
+    }
+
+    private fun handleRecommendationError(e: Exception, area: SavedArea) {
+        if (e is java.net.SocketTimeoutException || e.message?.contains("No soil data available") == true) {
+            state = state.copy(
+                treeRecommendations = listOf(
+                    TreeRecommendation(
+                        species = "No Recommendations",
+                        suitabilityScore = 0f,
+                        description = "Request timed out. No suitable trees found.",
+                        growthRate = "-",
+                        maintainanceLevel = "-",
+                        soilPreference = "-",
+                        climatePreference = "-"
+                    )
+                ),
+                isLoadingRecommendations = false
+            )
+        } else {
+            state = state.copy(
+                error = "Error loading soil data: ${e.message}",
+                isLoadingRecommendations = false
+            )
         }
     }
 
