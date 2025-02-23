@@ -45,7 +45,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.mobiletreeplantingapp.data.model.SavedArea
 import com.mobiletreeplantingapp.data.model.TreeRecommendation
 import com.mobiletreeplantingapp.navigation.Screen
-import com.mobiletreeplantingapp.ui.screen.navigation.detail.components.SavedTreeCard
+import com.mobiletreeplantingapp.ui.screen.navigation.detail.components.TreeRecommendationCard
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -148,56 +148,6 @@ fun AreaDetailScreen(
                                 )
                             }
                         }
-
-                        Text(
-                            text = "My Trees",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-
-                        if (state.isLoadingTrees) {
-                            CircularProgressIndicator()
-                        } else {
-                            LazyColumn(
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(state.savedTrees) { tree ->
-                                    SavedTreeCard(
-                                        tree = tree,
-                                        onEdit = { viewModel.onEditTree(it) },
-                                        onDelete = { viewModel.onDeleteTree(it) },
-                                        onStartPlanting = { 
-                                            navController.navigate(
-                                                Screen.PlantingGuide.createRoute(
-                                                    treeId = it.id,
-                                                    species = it.species
-                                                )
-                                            )
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        FloatingActionButton(
-                            onClick = { viewModel.onShowAddTreeDialog() },
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(16.dp)
-                        ) {
-                            Icon(Icons.Default.Add, "Add Custom Tree")
-                        }
-                    }
-
-                    if (state.showAddTreeDialog) {
-                        AddTreeDialog(
-                            onDismiss = { viewModel.onDismissAddTreeDialog() },
-                            onConfirm = { treeData -> 
-                                viewModel.onAddCustomTree(treeData)
-                            }
-                        )
                     }
                 }
             }
