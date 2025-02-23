@@ -14,10 +14,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -41,18 +44,22 @@ import com.google.maps.android.compose.Polygon
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.mobiletreeplantingapp.data.model.SavedArea
 import com.mobiletreeplantingapp.data.model.TreeRecommendation
+import com.mobiletreeplantingapp.navigation.Screen
+import com.mobiletreeplantingapp.ui.screen.navigation.detail.components.SavedTreeCard
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AreaDetailScreen(
     areaId: String,
     onNavigateBack: () -> Unit,
+    navController: NavController,
     viewModel: AreaDetailViewModel = hiltViewModel()
 ) {
     val state = viewModel.state
 
     LaunchedEffect(areaId) {
-        viewModel.loadArea(areaId) // Load area details first
+        viewModel.loadArea(areaId)
     }
 
     Scaffold(
@@ -82,7 +89,6 @@ fun AreaDetailScreen(
                 )
             } else {
                 state.area?.let { area ->
-                    // Trigger tree recommendations loading after area is loaded
                     LaunchedEffect(area) {
                         viewModel.loadTreeRecommendations(area)
                     }
@@ -92,7 +98,6 @@ fun AreaDetailScreen(
                             .fillMaxSize()
                             .padding(16.dp)
                     ) {
-                        // Always show the map and area info first
                         AreaMap(
                             area = area,
                             modifier = Modifier.fillMaxWidth()
@@ -118,7 +123,23 @@ fun AreaDetailScreen(
                             }
                         } else {
                             if (state.treeRecommendations.isNotEmpty()) {
-                                TreeRecommendationsList(state.treeRecommendations)
+                                LazyColumn(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    items(state.treeRecommendations) { recommendation ->
+                                        TreeRecommendationCard(
+                                            recommendation = recommendation,
+                                            onStartPlanting = { selectedTree ->
+                                                navController.navigate(
+                                                    Screen.PlantingGuide.createRoute(
+                                                        treeId = selectedTree.id,
+                                                        species = selectedTree.species
+                                                    )
+                                                )
+                                            }
+                                        )
+                                    }
+                                }
                             } else {
                                 Text(
                                     text = "No suitable trees found.",
@@ -127,81 +148,57 @@ fun AreaDetailScreen(
                                 )
                             }
                         }
+
+                        Text(
+                            text = "My Trees",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+
+                        if (state.isLoadingTrees) {
+                            CircularProgressIndicator()
+                        } else {
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(state.savedTrees) { tree ->
+                                    SavedTreeCard(
+                                        tree = tree,
+                                        onEdit = { viewModel.onEditTree(it) },
+                                        onDelete = { viewModel.onDeleteTree(it) },
+                                        onStartPlanting = { 
+                                            navController.navigate(
+                                                Screen.PlantingGuide.createRoute(
+                                                    treeId = it.id,
+                                                    species = it.species
+                                                )
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
-                }
-            }
-        }
-    }
-}
 
-@Composable
-private fun TreeRecommendationsList(
-    recommendations: List<TreeRecommendation>,
-    modifier: Modifier = Modifier
-) {
-    LazyColumn(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(recommendations) { recommendation ->
-            TreeRecommendationCard(recommendation = recommendation)
-        }
-    }
-}
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        FloatingActionButton(
+                            onClick = { viewModel.onShowAddTreeDialog() },
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(16.dp)
+                        ) {
+                            Icon(Icons.Default.Add, "Add Custom Tree")
+                        }
+                    }
 
-@Composable
-private fun TreeRecommendationCard(recommendation: TreeRecommendation) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = recommendation.species,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = "${(recommendation.suitabilityScore * 100).toInt()}% Match",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = recommendation.description,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        text = "Growth Rate",
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                    Text(
-                        text = recommendation.growthRate,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                Column {
-                    Text(
-                        text = "Maintenance",
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                    Text(
-                        text = recommendation.maintainanceLevel,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    if (state.showAddTreeDialog) {
+                        AddTreeDialog(
+                            onDismiss = { viewModel.onDismissAddTreeDialog() },
+                            onConfirm = { treeData -> 
+                                viewModel.onAddCustomTree(treeData)
+                            }
+                        )
+                    }
                 }
             }
         }

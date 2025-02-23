@@ -29,19 +29,22 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import com.mobiletreeplantingapp.ui.screen.navigation.explore.components.AreaDetailsCard
 import androidx.compose.material.icons.filled.Landscape
 import androidx.compose.material.icons.filled.Terrain
 import androidx.compose.material.icons.filled.Height
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavController
+import com.mobiletreeplantingapp.navigation.Screen
+import java.util.UUID
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ExploreScreen(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
-    viewModel: ExploreViewModel = hiltViewModel()
+    viewModel: ExploreViewModel = hiltViewModel(),
+    navController: NavController
 ) {
     val context = LocalContext.current
     val state = viewModel.state

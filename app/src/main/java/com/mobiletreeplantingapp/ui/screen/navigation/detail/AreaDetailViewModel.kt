@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import java.util.UUID
 
 @HiltViewModel
 class AreaDetailViewModel @Inject constructor(
@@ -267,7 +268,11 @@ class AreaDetailViewModel @Inject constructor(
                     )
                 )
             } else {
-                filteredRecommendations
+                filteredRecommendations.map { recommendation ->
+                    recommendation.copy(
+                        id = UUID.randomUUID().toString()
+                    )
+                }
             }
         } catch (e: Exception) {
             Log.e("AreaDetailViewModel", "Error generating tree recommendations", e)
@@ -292,6 +297,7 @@ class AreaDetailViewModel @Inject constructor(
         growthRate: String,
         maintenanceLevel: String
     ) = TreeRecommendation(
+        id = UUID.randomUUID().toString(),
         species = species,
         suitabilityScore = suitabilityScore,
         description = description,

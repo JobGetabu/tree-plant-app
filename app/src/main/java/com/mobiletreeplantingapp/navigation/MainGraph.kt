@@ -21,6 +21,7 @@ import com.mobiletreeplantingapp.ui.screen.navigation.home.HomeScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.mytrees.MyTreesScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.saved.SavedAreasScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsScreen
+import com.mobiletreeplantingapp.ui.screen.planting.PlantingGuideScreen
 
 @Composable
 fun MainGraph(
@@ -37,7 +38,10 @@ fun MainGraph(
             HomeScreen()
         }
         composable(route = Screen.Explore.route) {
-            ExploreScreen(innerPadding = innerPadding)
+            ExploreScreen(
+                innerPadding = innerPadding,
+                navController = navController
+            )
         }
         composable(route = Screen.MyTrees.route) {
             SavedAreasScreen(
@@ -68,6 +72,25 @@ fun MainGraph(
                 ?: return@composable
             AreaDetailScreen(
                 areaId = areaId,
+                onNavigateBack = {
+                    navController.navigateUp()
+                },
+                navController = navController
+            )
+        }
+
+        composable(
+            route = Screen.PlantingGuide.route,
+            arguments = listOf(
+                navArgument("treeId") { type = NavType.StringType },
+                navArgument("species") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val treeId = backStackEntry.arguments?.getString("treeId") ?: return@composable
+            val species = backStackEntry.arguments?.getString("species") ?: return@composable
+            PlantingGuideScreen(
+                treeId = treeId,
+                species = species,
                 onNavigateBack = {
                     navController.navigateUp()
                 }

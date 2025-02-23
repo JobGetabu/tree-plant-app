@@ -6,11 +6,13 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Forest
 import androidx.compose.material.icons.filled.Landscape
+import androidx.compose.material.icons.filled.Park
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Forest
 import androidx.compose.material.icons.outlined.Landscape
+import androidx.compose.material.icons.outlined.Park
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(
@@ -63,11 +65,13 @@ sealed class Screen(
     )
     
     object PlantingGuide : Screen(
-        route = "planting_guide",
+        route = "planting_guide/{treeId}/{species}",
         title = "Planting Guide",
-        selectedIcon = Icons.Filled.Home,
-        unselectedIcon = Icons.Outlined.Home
-    )
+        selectedIcon = Icons.Filled.Park,  // or another appropriate icon
+        unselectedIcon = Icons.Outlined.Park  // or another appropriate icon
+    ) {
+        fun createRoute(treeId: String, species: String) = "planting_guide/$treeId/$species"
+    }
     
     object Community : Screen(
         route = "community",
