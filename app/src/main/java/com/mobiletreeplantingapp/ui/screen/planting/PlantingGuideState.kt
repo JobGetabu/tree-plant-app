@@ -15,5 +15,6 @@ data class PlantingGuideState(
     val guideSteps: List<GuideStep> = emptyList(),
     val isLoading: Boolean = false,
     val isUploadingPhoto: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val isUploading: Boolean = false,
 ) 

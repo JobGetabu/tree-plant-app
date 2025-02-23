@@ -1,10 +1,18 @@
 package com.mobiletreeplantingapp.data.repository
 
+import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
+import android.media.MediaScannerConnection
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -16,72 +24,131 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.IOException
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class StorageRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val storage: FirebaseStorage
+    @ApplicationContext private val context: Context
 ) : StorageRepository {
 
-    private val treesRef = storage.reference.child("trees")
+    private val storage: FirebaseStorage by lazy {
+        val storageUrl = "gs://fir-nodejs-api.appspot.com"
+        FirebaseStorage.getInstance(storageUrl)
+    }
 
-    override suspend fun uploadPhoto(treeId: String, imageUri: Uri): String {
-        return try {
+    override suspend fun uploadTreePhoto(treeId: String, photoUri: Uri): String = withContext(Dispatchers.IO) {
+        try {
             Log.d(TAG, "Starting photo upload for tree: $treeId")
             
-            // Compress the image before uploading
-            val compressedUri = compressImage(imageUri)
+            // Validate inputs
+            if (treeId.isBlank()) {
+                throw IllegalArgumentException("Tree ID cannot be empty")
+            }
+
+            // Create organized file structure
+            val timestamp = System.currentTimeMillis()
+            val fileName = "photo_$timestamp.jpg"
+            val photoRef = storage.reference
+                .child("trees")
+                .child(treeId)
+                .child("photos")
+                .child(fileName)
             
-            // Create a unique filename
-            val filename = "${UUID.randomUUID()}.jpg"
-            val photoRef = treesRef.child(treeId).child(filename)
+            Log.d(TAG, "Uploading to path: ${photoRef.path}")
+
+            // Read and compress the image
+            val bitmap = context.contentResolver.openInputStream(photoUri)?.use { inputStream ->
+                BitmapFactory.decodeStream(inputStream)
+            } ?: throw IllegalStateException("Could not read file")
+
+            // Compress image
+            val baos = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos)
+            val compressedBytes = baos.toByteArray()
+
+            // Upload bytes
+            val uploadTask = photoRef.putBytes(compressedBytes)
             
-            // Upload the file
-            val uploadTask = photoRef.putFile(compressedUri).await()
+            // Monitor upload
+            uploadTask.addOnProgressListener { taskSnapshot ->
+                val progress = (100.0 * taskSnapshot.bytesTransferred) / taskSnapshot.totalByteCount
+                Log.d(TAG, "Upload is $progress% done")
+            }
+
+            // Wait for completion
+            uploadTask.await()
             
-            // Get the download URL
+            // Get download URL
             val downloadUrl = photoRef.downloadUrl.await().toString()
-            Log.d(TAG, "Photo uploaded successfully. URL: $downloadUrl")
+            Log.d(TAG, "Upload successful. Download URL: $downloadUrl")
+
+            // Cleanup
+            bitmap.recycle()
+            baos.close()
             
-            downloadUrl
+            return@withContext downloadUrl
         } catch (e: Exception) {
-            Log.e(TAG, "Error uploading photo", e)
+            Log.e(TAG, "Error uploading photo. TreeId: $treeId, Error: ${e.message}", e)
             throw e
         }
     }
 
-    override suspend fun deletePhoto(photoUrl: String) {
+    override suspend fun getPhotosForTree(treeId: String): List<String> = withContext(Dispatchers.IO) {
         try {
-            // Extract the path from the URL and get the reference
+            if (treeId.isBlank()) {
+                Log.e(TAG, "getPhotosForTree: Tree ID is blank")
+                return@withContext emptyList()
+            }
+
+            Log.d(TAG, "Starting to fetch photos for tree: $treeId")
+            
+            val photosRef = storage.reference
+                .child("trees")
+                .child(treeId)
+                .child("photos")
+
+            Log.d(TAG, "Created reference: ${photosRef.path}")
+
+            // List all files in the tree's photos directory
+            val result = photosRef.listAll().await()
+            Log.d(TAG, "ListAll completed. Found ${result.items.size} photos")
+            
+            if (result.items.isEmpty()) {
+                Log.d(TAG, "No photos found for tree: $treeId")
+                return@withContext emptyList()
+            }
+
+            // Get download URLs for all photos
+            val urls = result.items.mapNotNull { item ->
+                try {
+                    Log.d(TAG, "Fetching URL for item: ${item.name}")
+                    val url = item.downloadUrl.await().toString()
+                    Log.d(TAG, "Got URL: $url")
+                    url
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to get URL for photo: ${item.name}", e)
+                    null
+                }
+            }
+            
+            Log.d(TAG, "Successfully fetched ${urls.size} photo URLs for tree: $treeId")
+            urls
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching photos for tree: $treeId", e)
+            emptyList()
+        }
+    }
+
+    override suspend fun deleteTreePhoto(photoUrl: String) {
+        try {
             val photoRef = storage.getReferenceFromUrl(photoUrl)
             photoRef.delete().await()
-            Log.d(TAG, "Photo deleted successfully: $photoUrl")
         } catch (e: Exception) {
-            Log.e(TAG, "Error deleting photo", e)
-            throw e
+            throw Exception("Failed to delete photo: ${e.message}")
         }
-    }
-
-    override fun getPhotosForTree(treeId: String): Flow<Result<List<String>>> = callbackFlow {
-        val photosRef = treesRef.child(treeId)
-        
-        try {
-            // List all files in the tree's directory
-            val result = photosRef.listAll().await()
-            
-            // Get download URLs for all photos
-            val urls = result.items.map { it.downloadUrl.await().toString() }
-            
-            trySend(Result.success(urls))
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching photos", e)
-            trySend(Result.failure(e))
-        }
-        
-        awaitClose()
     }
 
     override suspend fun compressImage(uri: Uri): Uri = withContext(Dispatchers.IO) {
@@ -107,6 +174,6 @@ class StorageRepositoryImpl @Inject constructor(
     }
 
     companion object {
-        private const val TAG = "StorageRepository"
+        private const val TAG = "StorageRepositoryImpl"
     }
 } 

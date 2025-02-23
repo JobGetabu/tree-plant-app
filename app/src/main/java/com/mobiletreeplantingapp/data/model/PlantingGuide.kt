@@ -11,9 +11,9 @@ data class GuideStep(
 )
 
 data class TreeProgress(
-    val treeId: String,
-    val plantedDate: Long,
-    val species: String,
+     val treeId: String = "",
+    val plantedDate: Long = 0L,
+    val species: String = "",
     val completedSteps: List<Int> = emptyList(),
     val photos: List<String> = emptyList(),
     val nextMilestone: Milestone? = null

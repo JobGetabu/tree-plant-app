@@ -8,11 +8,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
 import com.mobiletreeplantingapp.data.model.SavedArea
+import com.mobiletreeplantingapp.data.model.SavedTree
 import com.mobiletreeplantingapp.data.model.SoilData
 import com.mobiletreeplantingapp.data.model.TreeRecommendation
 import com.mobiletreeplantingapp.data.remote.SoilApiService
 import com.mobiletreeplantingapp.data.repository.CoroutineDispatchers
 import com.mobiletreeplantingapp.data.repository.FirestoreRepository
+import com.mobiletreeplantingapp.ui.screen.navigation.detail.components.TreeData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
@@ -46,6 +48,8 @@ class AreaDetailViewModel @Inject constructor(
                             isLoadingArea = false,
                             error = null
                         )
+                        // Load trees for this area
+                        loadSavedTrees(areaId)
                     }.onFailure { error ->
                         state = state.copy(
                             error = error.message,
@@ -306,4 +310,82 @@ class AreaDetailViewModel @Inject constructor(
         soilPreference = "Adaptable",
         climatePreference = "Various"
     )
+
+    fun onShowAddTreeDialog() {
+        state = state.copy(showAddTreeDialog = true)
+    }
+
+    fun onDismissAddTreeDialog() {
+        state = state.copy(showAddTreeDialog = false)
+    }
+
+    fun onAddCustomTree(treeData: TreeData) {
+        viewModelScope.launch {
+            val newTree = SavedTree(
+                id = UUID.randomUUID().toString(),
+                species = treeData.species,
+                notes = treeData.notes,
+                areaId = state.area?.id ?: return@launch,
+                dateAdded = System.currentTimeMillis()
+            )
+            firestoreRepository.saveTree(newTree)
+        }
+    }
+
+    fun onEditTree(tree: SavedTree) {
+        state = state.copy(
+            showEditDialog = true,
+            treeToEdit = tree
+        )
+    }
+
+    fun onDismissEditDialog() {
+        state = state.copy(
+            showEditDialog = false,
+            treeToEdit = null
+        )
+    }
+
+    fun onUpdateTree(updatedTree: SavedTree) {
+        viewModelScope.launch {
+            firestoreRepository.updateTree(updatedTree)
+                .onSuccess {
+                    state = state.copy(
+                        showEditDialog = false,
+                        treeToEdit = null
+                    )
+                }
+                .onFailure { error ->
+                    state = state.copy(
+                        error = error.message
+                    )
+                }
+        }
+    }
+
+    fun onDeleteTree(tree: SavedTree) {
+        viewModelScope.launch {
+            firestoreRepository.deleteTree(tree.id)
+        }
+    }
+
+    private fun loadSavedTrees(areaId: String) {
+        viewModelScope.launch {
+            state = state.copy(isLoadingTrees = true)
+            firestoreRepository.getAreaTrees(areaId)
+                .collect { result ->
+                    result.onSuccess { trees ->
+                        state = state.copy(
+                            savedTrees = trees,
+                            isLoadingTrees = false
+                        )
+                    }.onFailure { error ->
+                        state = state.copy(
+                            error = error.message,
+                            isLoadingTrees = false
+                        )
+                    }
+                }
+        }
+    }
 }

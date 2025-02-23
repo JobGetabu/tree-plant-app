@@ -21,8 +21,9 @@ fun BottomNavBar(navController: NavController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Hide bottom bar for detail screen
-    if (currentRoute?.startsWith("area_detail") == true) {
+    // Hide bottom bar for detail screen and planting guide screen
+    if (currentRoute?.startsWith("area_detail") == true || 
+        currentRoute?.startsWith("planting_guide") == true) {
         return
     }
 

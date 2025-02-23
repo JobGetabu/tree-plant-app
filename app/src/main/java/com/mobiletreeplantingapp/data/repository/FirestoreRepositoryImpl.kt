@@ -15,6 +15,10 @@ import kotlin.coroutines.suspendCoroutine
 import android.util.Log
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.Query
+import com.mobiletreeplantingapp.data.model.SavedTree
+import com.google.firebase.firestore.DocumentSnapshot
 
 @Singleton
 class FirestoreRepositoryImpl @Inject constructor(
@@ -24,6 +28,7 @@ class FirestoreRepositoryImpl @Inject constructor(
 
     private val areasCollection = firestore.collection("areas")
     private val treeProgressCollection = firestore.collection("tree_progress")
+    private val treesCollection = firestore.collection("trees")
 
     override suspend fun saveArea(area: SavedArea): Result<Unit> = try {
         Log.d("FirestoreRepo", "Starting to save area: ${area.name}")
@@ -107,43 +112,7 @@ class FirestoreRepositoryImpl @Inject constructor(
         awaitClose { listener.remove() }
     }
 
-    override fun getTreeProgress(treeId: String): Flow<Result<TreeProgress>> = callbackFlow {
-        try {
-            val progressRef = treeProgressCollection.document(treeId)
-            
-            val listener = progressRef.addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(Result.failure(error))
-                    return@addSnapshotListener
-                }
 
-                if (snapshot != null && snapshot.exists()) {
-                    val progress = snapshot.toObject(TreeProgress::class.java)
-                    if (progress != null) {
-                        trySend(Result.success(progress))
-                    } else {
-                        trySend(Result.failure(Exception("Failed to parse tree progress")))
-                    }
-                } else {
-                    trySend(Result.failure(Exception("Tree progress not found")))
-                }
-            }
-
-            awaitClose { listener.remove() }
-        } catch (e: Exception) {
-            trySend(Result.failure(e))
-            close(e)
-        }
-    }
-
-    override suspend fun updateTreeProgress(progress: TreeProgress): Result<Unit> = try {
-        treeProgressCollection.document(progress.treeId)
-            .set(progress)
-            .await()
-        Result.success(Unit)
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
     override fun getGuideSteps(species: String): List<GuideStep> {
         // This is a simplified version. In a real app, you might want to fetch this from Firestore
@@ -197,5 +166,207 @@ class FirestoreRepositoryImpl @Inject constructor(
                 )
             )
         }
+    }
+
+    override suspend fun saveTree(tree: SavedTree): Result<Unit> = try {
+        val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
+        
+        treesCollection
+            .document(tree.id)
+            .set(
+                tree.toMap().plus(
+                    mapOf(
+                        "userId" to userId,
+                        "createdAt" to FieldValue.serverTimestamp()
+                    )
+                )
+            )
+            .await()
+            
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Log.e("FirestoreRepository", "Error saving tree", e)
+        Result.failure(e)
+    }
+
+    override suspend fun deleteTree(treeId: String): Result<Unit> = try {
+        val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
+        
+        // First verify the tree belongs to the user
+        val treeDoc = treesCollection.document(treeId).get().await()
+        if (treeDoc.getString("userId") != userId) {
+            throw Exception("Unauthorized to delete this tree")
+        }
+        
+        treesCollection.document(treeId).delete().await()
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Log.e("FirestoreRepository", "Error deleting tree", e)
+        Result.failure(e)
+    }
+
+    override suspend fun updateTree(tree: SavedTree): Result<Unit> = try {
+        val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
+        
+        // First verify the tree belongs to the user
+        val treeDoc = treesCollection.document(tree.id).get().await()
+        if (treeDoc.getString("userId") != userId) {
+            throw Exception("Unauthorized to update this tree")
+        }
+        
+        treesCollection
+            .document(tree.id)
+            .update(tree.toMap().plus("updatedAt" to FieldValue.serverTimestamp()))
+            .await()
+            
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Log.e("FirestoreRepository", "Error updating tree", e)
+        Result.failure(e)
+    }
+
+    override fun getAreaTrees(areaId: String): Flow<Result<List<SavedTree>>> = callbackFlow {
+        try {
+            val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
+            
+            val listener = treesCollection
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("areaId", areaId)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        trySend(Result.failure(error))
+                        return@addSnapshotListener
+                    }
+
+                    if (snapshot != null) {
+                        val trees = snapshot.documents.mapNotNull { doc ->
+                            try {
+                                SavedTree(
+                                    id = doc.id,
+                                    species = doc.getString("species") ?: "",
+                                    notes = doc.getString("notes") ?: "",
+                                    areaId = doc.getString("areaId") ?: "",
+                                    dateAdded = doc.getTimestamp("createdAt")?.seconds ?: 0
+                                )
+                            } catch (e: Exception) {
+                                Log.e("FirestoreRepository", "Error parsing tree document", e)
+                                null
+                            }
+                        }.sortedByDescending { it.dateAdded }
+                        trySend(Result.success(trees))
+                    }
+                }
+
+            awaitClose { listener.remove() }
+        } catch (e: Exception) {
+            trySend(Result.failure(e))
+            close(e)
+        }
+    }
+
+    override suspend fun saveTreeProgress(progress: TreeProgress): Result<Unit> = try {
+        val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
+        
+        Log.d(TAG, "Saving tree progress for treeId: ${progress.treeId}")
+        
+        treeProgressCollection
+            .document(progress.treeId)
+            .set(
+                progress.toMap().plus(
+                    mapOf(
+                        "userId" to userId,
+                        "createdAt" to FieldValue.serverTimestamp(),
+                        "updatedAt" to FieldValue.serverTimestamp()
+                    )
+                )
+            )
+            .await()
+            
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Log.e(TAG, "Error saving tree progress", e)
+        Result.failure(e)
+    }
+
+    override suspend fun updateTreeProgress(progress: TreeProgress): Result<Unit> = try {
+        val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
+        
+        treeProgressCollection
+            .document(progress.treeId)
+            .update(
+                progress.toMap().plus(
+                    mapOf(
+                        "updatedAt" to FieldValue.serverTimestamp()
+                    )
+                )
+            )
+            .await()
+            
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Log.e(TAG, "Error updating tree progress", e)
+        Result.failure(e)
+    }
+
+    override suspend fun getTreeProgress(treeId: String): Flow<Result<TreeProgress?>> = callbackFlow {
+        try {
+            val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
+            
+            val listener = treeProgressCollection
+                .document(treeId)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        trySend(Result.failure(error))
+                        return@addSnapshotListener
+                    }
+
+                    if (snapshot != null && snapshot.exists()) {
+                        try {
+                            val progress = snapshot.toTreeProgress()
+                            trySend(Result.success(progress))
+                        } catch (e: Exception) {
+                            trySend(Result.failure(e))
+                        }
+                    } else {
+                        trySend(Result.success(null))
+                    }
+                }
+
+            awaitClose { listener.remove() }
+        } catch (e: Exception) {
+            trySend(Result.failure(e))
+            close(e)
+        }
+    }
+
+    private fun DocumentSnapshot.toTreeProgress(): TreeProgress {
+        return TreeProgress(
+            treeId = id,
+            species = getString("species") ?: "",
+            plantedDate = getTimestamp("plantedDate")?.seconds ?: 0,
+            completedSteps = (get("completedSteps") as? List<*>)?.mapNotNull { it as? Int } ?: emptyList(),
+            photos = (get("photos") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+        )
+    }
+
+    private fun TreeProgress.toMap(): Map<String, Any> {
+        return mapOf(
+            "treeId" to treeId,
+            "species" to species,
+            "plantedDate" to plantedDate,
+            "completedSteps" to completedSteps,
+            "photos" to photos
+        )
+    }
+
+    private fun SavedTree.toMap() = mapOf(
+        "species" to species,
+        "notes" to notes,
+        "areaId" to areaId,
+        "dateAdded" to dateAdded
+    )
+
+    companion object {
+        private const val TAG = "FirestoreRepositoryImpl"
     }
 }

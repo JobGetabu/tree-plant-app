@@ -16,9 +16,7 @@ fun TreeRecommendationCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onStartPlanting(recommendation) },
+        modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
@@ -70,12 +68,16 @@ fun TreeRecommendationCard(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = { onStartPlanting(recommendation) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Start Planting")
+            
+            // Only show the Start Planting button if it's not an error recommendation
+            if (recommendation.species != "Error" && recommendation.suitabilityScore > 0) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { onStartPlanting(recommendation) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Start Planting")
+                }
             }
         }
     }
