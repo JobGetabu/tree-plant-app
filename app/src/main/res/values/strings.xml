@@ -27,4 +27,75 @@
 
     // Main
     <string name="sign_out">Sign out</string>
+
+    <string name="help_and_support_content">
+        Welcome to the Tree Planting App Help Center\n\n
+        
+        Frequently Asked Questions:\n\n
+        
+        1. How do I start planting trees?\n
+        • Navigate to "New Planting" on the home screen\n
+        • Select or add a new planting area\n
+        • Follow the step-by-step planting guide\n\n
+        
+        2. How is CO₂ offset calculated?\n
+        • Each tree planted is estimated to offset 20kg of CO₂ annually\n
+        • Calculations are based on average tree growth patterns\n\n
+        
+        3. Technical Support:\n
+        • Email: support@treeplantingapp.com\n
+        • Phone: 1-800-TREE-HELP\n
+        • Hours: Monday-Friday, 9AM-5PM EST\n\n
+        
+        For more detailed information, visit our website or contact our support team.
+    </string>
+
+    <string name="privacy_policy_content">
+        Privacy Policy\n\n
+        
+        Last updated: January 1, 2024\n\n
+        
+        1. Information We Collect\n
+        • Account information\n
+        • Location data for tree planting\n
+        • Usage statistics\n\n
+        
+        2. How We Use Your Information\n
+        • To provide planting services\n
+        • To track environmental impact\n
+        • To improve user experience\n\n
+        
+        3. Data Protection\n
+        • Industry-standard encryption\n
+        • Regular security audits\n
+        • Secure data storage\n\n
+        
+        4. Your Rights\n
+        • Access your data\n
+        • Request data deletion\n
+        • Opt-out of tracking
+    </string>
+
+    <string name="terms_of_service_content">
+        Terms of Service\n\n
+        
+        1. Acceptance of Terms\n
+        By using this app, you agree to these terms.\n\n
+        
+        2. User Responsibilities\n
+        • Provide accurate planting information\n
+        • Follow planting guidelines\n
+        • Respect environmental regulations\n\n
+        
+        3. App Usage\n
+        • Personal, non-commercial use only\n
+        • Do not misuse or abuse features\n
+        • Report issues promptly\n\n
+        
+        4. Limitation of Liability\n
+        We are not responsible for planting outcomes.\n\n
+        
+        5. Changes to Terms\n
+        We may update these terms with notice.
+    </string>
 </resources>

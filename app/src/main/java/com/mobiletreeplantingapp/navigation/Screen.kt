@@ -2,23 +2,31 @@ package com.mobiletreeplantingapp.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Forest
 import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Landscape
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Park
+import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.outlined.Article
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Forest
 import androidx.compose.material.icons.outlined.Forum
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Landscape
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Park
+import androidx.compose.material.icons.outlined.Policy
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(
@@ -120,4 +128,32 @@ sealed class Screen(
         selectedIcon = Icons.Filled.Notifications,
         unselectedIcon = Icons.Outlined.Notifications
     )
-} 
+
+    object EditProfile : Screen(
+        route = "edit_profile",
+        title = "Edit Profile",
+        selectedIcon = Icons.Filled.Edit,
+        unselectedIcon = Icons.Outlined.Edit
+    )
+
+    object HelpAndSupport : Screen(
+        route = "help_and_support",
+        title = "Help & Support",
+        selectedIcon = Icons.Default.Info,
+        unselectedIcon = Icons.Outlined.Info
+    )
+    
+    object PrivacyPolicy : Screen(
+        route = "privacy_policy",
+        title = "Privacy Policy",
+        selectedIcon = Icons.Default.Policy,
+        unselectedIcon = Icons.Outlined.Policy
+    )
+    
+    object TermsOfService : Screen(
+        route = "terms_of_service",
+        title = "Terms of Service",
+        selectedIcon = Icons.Default.Description,
+        unselectedIcon = Icons.Outlined.Description
+    )
+}

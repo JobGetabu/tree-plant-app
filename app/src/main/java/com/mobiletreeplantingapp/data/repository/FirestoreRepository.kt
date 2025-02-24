@@ -8,6 +8,7 @@ import com.mobiletreeplantingapp.data.model.UserStats
 import com.mobiletreeplantingapp.data.model.TreeRecommendationData
 import kotlinx.coroutines.flow.Flow
 import com.google.firebase.firestore.FirebaseFirestore
+import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsViewModel
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Inject
@@ -38,5 +39,9 @@ interface FirestoreRepository {
     ): Flow<Result<List<TreeRecommendationData>>>
     
     suspend fun getTreeById(treeId: String): Result<SavedTree?>
+    
+    // New methods for user profile
+    suspend fun updateUserProfile(displayName: String): Result<Unit>
+    fun getUserProfile(): Flow<Result<SettingsViewModel.UserProfile>>
 }
 

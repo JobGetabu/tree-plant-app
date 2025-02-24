@@ -35,6 +35,8 @@ import androidx.navigation.NavController
 import com.mobiletreeplantingapp.navigation.Screen
 import com.mobiletreeplantingapp.ui.component.ThemeSelector
 import coil.compose.AsyncImage
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.*
 
 @Composable
 fun SettingsScreen(
@@ -43,138 +45,182 @@ fun SettingsScreen(
     navigateToLogin: () -> Unit,
     navController: NavController
 ) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(innerPadding)
+            .verticalScroll(rememberScrollState())
+            .padding(top = innerPadding.calculateTopPadding())  // Keep top padding for status bar
     ) {
-        Column(
+        // Profile Header
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.primaryContainer)
+                .padding(24.dp)
         ) {
-            // Profile Section
             ProfileSection()
+        }
 
-            Spacer(modifier = Modifier.height(24.dp))
+        // Stats Cards with improved spacing and design
+        StatisticsSection(
+            treesPlanted = settingsViewModel.userStats.treesPlanted,
+            co2Offset = settingsViewModel.userStats.co2Offset,
+            totalArea = settingsViewModel.userStats.totalArea,
+            modifier = Modifier.padding(16.dp)
+        )
 
-            // Updated Statistics Cards
-            val viewModel: SettingsViewModel = hiltViewModel()
-            StatisticsSection(
-                treesPlanted = viewModel.userStats.treesPlanted,
-                co2Offset = viewModel.userStats.co2Offset,
-                totalArea = viewModel.userStats.totalArea
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Settings Options
-            SettingsOption(
-                icon = Icons.Default.Edit,
-                title = "Edit Profile",
-                onClick = { /* Handle click */ }
-            )
-            SettingsOption(
-                icon = Icons.Default.Notifications,
-                title = "Notifications",
-                onClick = { /* Handle click */ }
-            )
-            SettingsOption(
-                icon = Icons.Default.Info,
-                title = "Help & Support",
-                onClick = { /* Handle click */ }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Theme Selector
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Build,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(
-                            text = "Theme",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    ThemeSelector(
-                        currentTheme = settingsViewModel.currentTheme,
-                        onThemeSelected = { settingsViewModel.setTheme(it) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Notification Settings Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp)
-                    .clickable { navController.navigate(Screen.NotificationSettings.route) },
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(
-                            text = "Notification Settings",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Sign Out Button
-            TextButton(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    settingsViewModel.logout()
-                    navigateToLogin()
-                }
-            ) {
-                Text(
-                    text = stringResource(R.string.sign_out),
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.error
+        // Settings Groups
+        SettingsGroup(
+            title = "Account",
+            items = listOf(
+                SettingsItem(
+                    icon = Icons.Default.Edit,
+                    title = "Edit Profile",
+                    onClick = { navController.navigate(Screen.EditProfile.route) }
+                ),
+                SettingsItem(
+                    icon = Icons.Default.Notifications,
+                    title = "Notifications",
+                    onClick = { navController.navigate(Screen.NotificationSettings.route) }
                 )
+            )
+        )
+
+        SettingsGroup(
+            title = "Appearance",
+            items = listOf(
+                SettingsItem(
+                    icon = Icons.Default.DarkMode,
+                    title = "Theme",
+                    content = {
+                        ThemeSelector(
+                            currentTheme = settingsViewModel.currentTheme,
+                            onThemeSelected = { settingsViewModel.setTheme(it) }
+                        )
+                    }
+                )
+            )
+        )
+
+        SettingsGroup(
+            title = "Support",
+            items = listOf(
+                SettingsItem(
+                    icon = Icons.Default.Info,
+                    title = "Help & Support",
+                    onClick = { navController.navigate(Screen.HelpAndSupport.route) }
+                ),
+                SettingsItem(
+                    icon = Icons.Default.Policy,
+                    title = "Privacy Policy",
+                    onClick = { navController.navigate(Screen.PrivacyPolicy.route) }
+                ),
+                SettingsItem(
+                    icon = Icons.Default.Description,
+                    title = "Terms of Service",
+                    onClick = { navController.navigate(Screen.TermsOfService.route) }
+                )
+            )
+        )
+
+        // Sign Out Button
+        Button(
+            onClick = {
+                settingsViewModel.logout()
+                navigateToLogin()
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
+            )
+        ) {
+            Icon(
+                Icons.Default.Logout,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.sign_out))
+        }
+        
+    }
+}
+
+
+@Composable
+private fun SettingsGroup(
+    title: String,
+    items: List<SettingsItem>
+) {
+    Column(
+        modifier = Modifier.padding(vertical = 8.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column {
+                items.forEachIndexed { index, item ->
+                    SettingsItemRow(item = item)
+                    if (index < items.size - 1) {
+                        Divider(
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+                }
             }
         }
     }
 }
+
+@Composable
+private fun SettingsItemRow(
+    item: SettingsItem
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = item.onClick != null, onClick = { item.onClick?.invoke() })
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = item.icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = item.title,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f)
+        )
+        item.content?.invoke()
+    }
+}
+
+private data class SettingsItem(
+    val icon: ImageVector,
+    val title: String,
+    val onClick: (() -> Unit)? = null,
+    val content: (@Composable () -> Unit)? = null
+)
 
 @Composable
 private fun ProfileSection() {  // Remove parameters
@@ -225,10 +271,11 @@ private fun ProfileSection() {  // Remove parameters
 private fun StatisticsSection(
     treesPlanted: Int,
     co2Offset: Int,
-    totalArea: Double
+    totalArea: Double,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         StatCard(

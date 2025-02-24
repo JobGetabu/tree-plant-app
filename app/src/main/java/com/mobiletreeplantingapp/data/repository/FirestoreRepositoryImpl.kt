@@ -13,6 +13,7 @@ import javax.inject.Singleton
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import android.util.Log
+import com.google.firebase.auth.userProfileChangeRequest
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import com.google.firebase.firestore.FieldValue
@@ -22,6 +23,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.SetOptions
 import com.mobiletreeplantingapp.data.model.UserStats
 import com.mobiletreeplantingapp.data.model.TreeRecommendationData
+import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsViewModel
 
 @Singleton
 class FirestoreRepositoryImpl @Inject constructor(
@@ -495,6 +497,53 @@ class FirestoreRepositoryImpl @Inject constructor(
     } catch (e: Exception) {
         Log.e(TAG, "Error getting tree by ID", e)
         Result.failure(e)
+    }
+
+    override suspend fun updateUserProfile(displayName: String): Result<Unit> = try {
+        val user = auth.currentUser ?: throw Exception("User not authenticated")
+        
+        // Update Firebase Auth display name
+        user.updateProfile(
+            userProfileChangeRequest {
+                setDisplayName(displayName)
+            }
+        ).await()
+        
+        // Update Firestore user document
+        firestore.collection("users")
+            .document(user.uid)
+            .set(
+                mapOf("displayName" to displayName),
+                SetOptions.merge()
+            )
+            .await()
+            
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override fun getUserProfile(): Flow<Result<SettingsViewModel.UserProfile>> = callbackFlow {
+        val user = auth.currentUser ?: throw Exception("User not authenticated")
+        
+        val listener = firestore.collection("users")
+            .document(user.uid)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(Result.failure(error))
+                    return@addSnapshotListener
+                }
+
+                val profile = SettingsViewModel.UserProfile(
+                    displayName = user.displayName ?: "",
+                    email = user.email ?: "",
+                    photoUrl = user.photoUrl?.toString()
+                )
+                
+                trySend(Result.success(profile))
+            }
+
+        awaitClose { listener.remove() }
     }
 
     companion object {

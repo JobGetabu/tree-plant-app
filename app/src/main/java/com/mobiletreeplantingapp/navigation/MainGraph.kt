@@ -9,12 +9,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.mobiletreeplantingapp.R
 import com.mobiletreeplantingapp.ui.screen.article.ArticleScreen
 import com.mobiletreeplantingapp.ui.screen.forum.ForumScreen
 import com.mobiletreeplantingapp.ui.screen.forum.post.ForumPostScreen
@@ -26,6 +28,8 @@ import com.mobiletreeplantingapp.ui.screen.navigation.saved.SavedAreasScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsScreen
 import com.mobiletreeplantingapp.ui.screen.planting.PlantingGuideScreen
 import com.mobiletreeplantingapp.ui.screen.article.AllArticlesScreen
+import com.mobiletreeplantingapp.ui.screen.navigation.settings.ContentScreen
+import com.mobiletreeplantingapp.ui.screen.navigation.settings.EditProfileScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.settings.NotificationSettingsScreen
 
 @Composable
@@ -172,6 +176,40 @@ fun MainGraph(
         composable(Screen.NotificationSettings.route) {
             NotificationSettingsScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // Add the EditProfile route
+        composable(Screen.EditProfile.route) {
+            EditProfileScreen(
+                onNavigateBack = { navController.navigateUp() }
+            )
+        }
+
+        // Add the HelpAndSupport route
+        composable(Screen.HelpAndSupport.route) {
+            ContentScreen(
+                title = "Help & Support",
+                content = stringResource(R.string.help_and_support_content),
+                onNavigateBack = { navController.navigateUp() }
+            )
+        }
+
+        // Add the PrivacyPolicy route
+        composable(Screen.PrivacyPolicy.route) {
+            ContentScreen(
+                title = "Privacy Policy",
+                content = stringResource(R.string.privacy_policy_content),
+                onNavigateBack = { navController.navigateUp() }
+            )
+        }
+
+        // Add the TermsOfService route
+        composable(Screen.TermsOfService.route) {
+            ContentScreen(
+                title = "Terms of Service",
+                content = stringResource(R.string.terms_of_service_content),
+                onNavigateBack = { navController.navigateUp() }
             )
         }
     }
