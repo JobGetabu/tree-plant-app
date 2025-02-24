@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import com.mobiletreeplantingapp.data.model.NotificationPreferences
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -37,6 +38,18 @@ class PreferencesRepositoryImpl @Inject constructor(
             prefs[FERTILIZING_ENABLED] = preferences.fertilizingEnabled
             prefs[INSPECTION_ENABLED] = preferences.inspectionEnabled
             prefs[GROWTH_CHECK_ENABLED] = preferences.growthCheckEnabled
+        }
+    }
+
+    override fun getNotificationPreferencesFlow(): Flow<NotificationPreferences> {
+        return context.dataStore.data.map { preferences ->
+            NotificationPreferences(
+                wateringEnabled = preferences[WATERING_ENABLED] ?: true,
+                pruningEnabled = preferences[PRUNING_ENABLED] ?: true,
+                fertilizingEnabled = preferences[FERTILIZING_ENABLED] ?: true,
+                inspectionEnabled = preferences[INSPECTION_ENABLED] ?: true,
+                growthCheckEnabled = preferences[GROWTH_CHECK_ENABLED] ?: true
+            )
         }
     }
 

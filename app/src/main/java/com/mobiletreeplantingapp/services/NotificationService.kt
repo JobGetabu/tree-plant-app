@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.mobiletreeplantingapp.data.model.NotificationPreferences
 import com.mobiletreeplantingapp.data.model.SavedTree
 import com.mobiletreeplantingapp.data.repository.PreferencesRepository
 import com.mobiletreeplantingapp.workers.ReminderWorker
@@ -14,6 +15,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 
 class NotificationService @Inject constructor(
     private val context: Context,
@@ -21,6 +23,44 @@ class NotificationService @Inject constructor(
     private val preferencesRepository: PreferencesRepository,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 ) {
+    private val workManager = WorkManager.getInstance(context)
+
+    init {
+        scope.launch {
+            preferencesRepository.getNotificationPreferencesFlow().collect { preferences ->
+                handlePreferenceChanges(preferences)
+            }
+        }
+    }
+
+    private fun handlePreferenceChanges(preferences: NotificationPreferences) {
+        if (!preferences.wateringEnabled) cancelWateringReminders()
+        if (!preferences.pruningEnabled) cancelPruningReminders()
+        if (!preferences.fertilizingEnabled) cancelFertilizingReminders()
+        if (!preferences.inspectionEnabled) cancelInspectionReminders()
+        if (!preferences.growthCheckEnabled) cancelGrowthCheckReminders()
+    }
+
+    private fun cancelWateringReminders() {
+        workManager.cancelAllWorkByTag("water_reminder")
+    }
+
+    private fun cancelPruningReminders() {
+        workManager.cancelAllWorkByTag("pruning_reminder")
+    }
+
+    private fun cancelFertilizingReminders() {
+        workManager.cancelAllWorkByTag("fertilizing_reminder")
+    }
+
+    private fun cancelInspectionReminders() {
+        workManager.cancelAllWorkByTag("inspection_reminder")
+    }
+
+    private fun cancelGrowthCheckReminders() {
+        workManager.cancelAllWorkByTag("growth_check_reminder")
+    }
+
     fun scheduleAllReminders(tree: SavedTree, isTestMode: Boolean = false) {
         if (!permissionHandler.hasNotificationPermission()) {
             Log.w(TAG, "Notification permission not granted")
@@ -65,7 +105,8 @@ class NotificationService @Inject constructor(
                 message = "Time to water your tree! Regular watering helps establish strong roots.",
                 treeId = "${tree.id}_water_$delay",
                 delay = delay,
-                timeUnit = if (isTestMode) TimeUnit.MINUTES else TimeUnit.DAYS
+                timeUnit = if (isTestMode) TimeUnit.MINUTES else TimeUnit.DAYS,
+                tag = "water_reminder"
             )
         }
     }
@@ -83,7 +124,8 @@ class NotificationService @Inject constructor(
                 message = "Time for pruning! Remove any dead or crossing branches for healthy growth.",
                 treeId = "${tree.id}_prune_$delay",
                 delay = delay,
-                timeUnit = if (isTestMode) TimeUnit.MINUTES else TimeUnit.DAYS
+                timeUnit = if (isTestMode) TimeUnit.MINUTES else TimeUnit.DAYS,
+                tag = "pruning_reminder"
             )
         }
     }
@@ -101,7 +143,8 @@ class NotificationService @Inject constructor(
                 message = "Time to add nutrients! Proper fertilization promotes strong growth.",
                 treeId = "${tree.id}_fertilize_$delay",
                 delay = delay,
-                timeUnit = if (isTestMode) TimeUnit.MINUTES else TimeUnit.DAYS
+                timeUnit = if (isTestMode) TimeUnit.MINUTES else TimeUnit.DAYS,
+                tag = "fertilizing_reminder"
             )
         }
     }
@@ -119,7 +162,8 @@ class NotificationService @Inject constructor(
                 message = "Time for a health check! Look for signs of disease or pest problems.",
                 treeId = "${tree.id}_inspect_$delay",
                 delay = delay,
-                timeUnit = if (isTestMode) TimeUnit.MINUTES else TimeUnit.DAYS
+                timeUnit = if (isTestMode) TimeUnit.MINUTES else TimeUnit.DAYS,
+                tag = "inspection_reminder"
             )
         }
     }
@@ -137,7 +181,8 @@ class NotificationService @Inject constructor(
                 message = "Time to measure growth! Track your tree's progress and take photos.",
                 treeId = "${tree.id}_growth_$delay",
                 delay = delay,
-                timeUnit = if (isTestMode) TimeUnit.MINUTES else TimeUnit.DAYS
+                timeUnit = if (isTestMode) TimeUnit.MINUTES else TimeUnit.DAYS,
+                tag = "growth_check_reminder"
             )
         }
     }
@@ -147,7 +192,8 @@ class NotificationService @Inject constructor(
         message: String,
         treeId: String,
         delay: Long,
-        timeUnit: TimeUnit
+        timeUnit: TimeUnit,
+        tag: String
     ) {
         Log.d(TAG, "Scheduling reminder: $title for tree: $treeId with delay: $delay ${timeUnit.name}")
         
@@ -160,9 +206,10 @@ class NotificationService @Inject constructor(
         val reminderWork = OneTimeWorkRequestBuilder<ReminderWorker>()
             .setInputData(inputData)
             .setInitialDelay(delay, timeUnit)
+            .addTag(tag)
             .build()
 
-        WorkManager.getInstance(context).enqueue(reminderWork)
+        workManager.enqueue(reminderWork)
         Log.d(TAG, "Reminder work enqueued with ID: ${reminderWork.id}")
     }
 
