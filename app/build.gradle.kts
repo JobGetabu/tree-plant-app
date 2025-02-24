@@ -141,4 +141,7 @@ dependencies {
     implementation ("io.noties.markwon:ext-tables:4.6.2")
     implementation ("io.noties.markwon:image-coil:4.6.2")
     implementation ("io.noties.markwon:linkify:4.6.2")
+
+    implementation ("androidx.work:work-runtime-ktx:2.8.1")
+    implementation ("androidx.hilt:hilt-work:1.0.0")
 }

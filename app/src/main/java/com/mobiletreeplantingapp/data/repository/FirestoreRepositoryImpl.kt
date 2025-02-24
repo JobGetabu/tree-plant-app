@@ -430,6 +430,42 @@ class FirestoreRepositoryImpl @Inject constructor(
         awaitClose { listener.remove() }
     }
 
+    override suspend fun getTreeById(treeId: String): Result<SavedTree?> {
+        return try {
+            val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
+
+            // First get all user's areas
+            val areasSnapshot = firestore.collection("users")
+                .document(userId)
+                .collection("areas")
+                .get()
+                .await()
+
+            // Search for the tree in each area's trees collection
+            for (areaDoc in areasSnapshot.documents) {
+                val treeSnapshot = firestore.collection("users")
+                    .document(userId)
+                    .collection("areas")
+                    .document(areaDoc.id)
+                    .collection("trees")
+                    .whereEqualTo("id", treeId)
+                    .get()
+                    .await()
+
+                val tree = treeSnapshot.documents.firstOrNull()?.toObject(SavedTree::class.java)
+                if (tree != null) {
+                    return Result.success(tree)
+                }
+            }
+
+            // Tree not found
+            Result.success(null)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting tree by ID", e)
+            Result.failure(e)
+        }
+    }
+
     companion object {
         private const val TAG = "FirestoreRepositoryImpl"
     }

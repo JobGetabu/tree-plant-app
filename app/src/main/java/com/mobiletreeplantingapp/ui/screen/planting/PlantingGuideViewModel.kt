@@ -3,9 +3,6 @@ package com.mobiletreeplantingapp.ui.screen.planting
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mobiletreeplantingapp.data.model.TreeProgress
@@ -19,11 +16,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import androidx.lifecycle.SavedStateHandle
+import com.mobiletreeplantingapp.services.NotificationService
+import com.mobiletreeplantingapp.ui.util.NotificationPermissionHandler
 
 @HiltViewModel
 class PlantingGuideViewModel @Inject constructor(
     private val firestoreRepository: FirestoreRepository,
     private val storageRepository: StorageRepository,
+    private val notificationService: NotificationService,
+    private val permissionHandler: NotificationPermissionHandler,
     @ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -33,6 +34,8 @@ class PlantingGuideViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(PlantingGuideState())
     val state = _state.asStateFlow()
+
+    private var hasNotificationPermission = false
 
     init {
         Log.d(TAG, "Initializing ViewModel with treeId: $treeId, species: $species")
@@ -97,6 +100,7 @@ class PlantingGuideViewModel @Inject constructor(
     fun markStepCompleted(stepId: Int) {
         viewModelScope.launch {
             try {
+                Log.d(TAG, "Marking step $stepId as completed")
                 val currentProgress = _state.value.progress
                 val updatedSteps = currentProgress.completedSteps.toMutableList()
                 updatedSteps.add(stepId)
@@ -112,13 +116,16 @@ class PlantingGuideViewModel @Inject constructor(
                 // Update Firestore
                 firestoreRepository.updateTreeProgress(updatedProgress).fold(
                     onSuccess = {
-                        Log.d(TAG, "Successfully updated progress with step $stepId")
+                        Log.d(TAG, "Successfully updated tree progress")
+                        // Check if all steps are completed
+                        if (isPlantingCompleted(updatedProgress)) {
+                            Log.d(TAG, "Planting completed, scheduling reminders")
+                            scheduleCareReminders(updatedProgress.treeId)
+                        }
                     },
                     onFailure = { error ->
-                        Log.e(TAG, "Failed to update progress", error)
-                        // Revert local state on failure
+                        Log.e(TAG, "Failed to update tree progress", error)
                         _state.value = _state.value.copy(
-                            progress = currentProgress,
                             error = "Failed to update progress: ${error.message}"
                         )
                     }
@@ -126,10 +133,44 @@ class PlantingGuideViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e(TAG, "Error in markStepCompleted", e)
                 _state.value = _state.value.copy(
-                    error = "Failed to mark step as completed: ${e.message}"
+                    error = "Error: ${e.message}"
                 )
             }
         }
+    }
+
+    private fun isPlantingCompleted(progress: TreeProgress): Boolean {
+        val requiredSteps = _state.value.guideSteps.count { it.required }
+        val completedRequiredSteps = progress.completedSteps.size
+        Log.d(TAG, "Checking planting completion: completed $completedRequiredSteps of $requiredSteps required steps")
+        return completedRequiredSteps >= requiredSteps
+    }
+
+    fun onNotificationPermissionGranted() {
+        Log.d(TAG, "Notification permission granted")
+        hasNotificationPermission = true
+    }
+
+    private suspend fun scheduleCareReminders(treeId: String) {
+        Log.d(TAG, "Starting to schedule care reminders for tree: $treeId")
+        if (!hasNotificationPermission) {
+            Log.w(TAG, "Notification permission not granted")
+            return
+        }
+
+        firestoreRepository.getTreeById(treeId).fold(
+            onSuccess = { tree ->
+                if (tree != null) {
+                    Log.d(TAG, "Found tree, scheduling reminders")
+                    notificationService.scheduleAllReminders(tree, isTestMode = true)
+                } else {
+                    Log.e(TAG, "Tree not found for ID: $treeId")
+                }
+            },
+            onFailure = { error ->
+                Log.e(TAG, "Failed to get tree for reminders", error)
+            }
+        )
     }
 
     fun addPhoto(photoUri: Uri) {

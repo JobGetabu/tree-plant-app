@@ -32,5 +32,7 @@ interface FirestoreRepository {
         elevation: Double,
         climateZone: String
     ): Flow<Result<List<TreeRecommendationData>>>
+    
+    suspend fun getTreeById(treeId: String): Result<SavedTree?>
 }
 

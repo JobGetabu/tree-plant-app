@@ -44,6 +44,7 @@ import com.mobiletreeplantingapp.ui.util.formatDate
 import androidx.compose.material3.Button
 import androidx.compose.runtime.collectAsState
 import com.mobiletreeplantingapp.data.model.GuideStep
+import com.mobiletreeplantingapp.ui.util.RequestNotificationPermission
 
 private const val totalSteps = 4 // Default number of steps
 
@@ -57,6 +58,14 @@ fun PlantingGuideScreen(
 ) {
     val state by viewModel.state.collectAsState()
     
+    // Request notification permission
+    RequestNotificationPermission(
+        onPermissionGranted = {
+            // Permission granted, notifications can be scheduled
+            viewModel.onNotificationPermissionGranted()
+        }
+    )
+
     // Initialize the tree progress when the screen loads
     LaunchedEffect(Unit) {
         Log.d("PlantingGuideScreen", "Initializing with treeId: $treeId, species: $species")
