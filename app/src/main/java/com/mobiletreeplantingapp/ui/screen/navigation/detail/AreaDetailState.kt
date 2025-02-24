@@ -17,8 +17,8 @@ data class AreaDetailState(
     val isLoadingTrees: Boolean = false,
     val showAddTreeDialog: Boolean = false,
     val showEditDialog: Boolean = false,
-    val treeToEdit: SavedTree? = null
-
-    )
+    val treeToEdit: SavedTree? = null,
+    val navigationEvent: String? = null
+)
 
 

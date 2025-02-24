@@ -13,6 +13,7 @@ import com.mobiletreeplantingapp.data.model.TreeRecommendation
 import com.mobiletreeplantingapp.data.remote.SoilApiService
 import com.mobiletreeplantingapp.data.repository.CoroutineDispatchers
 import com.mobiletreeplantingapp.data.repository.FirestoreRepository
+import com.mobiletreeplantingapp.navigation.Screen
 import com.mobiletreeplantingapp.ui.screen.navigation.detail.components.TreeData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.catch
@@ -232,5 +233,51 @@ class AreaDetailViewModel @Inject constructor(
                     }
                 }
         }
+    }
+
+    fun onStartPlanting(recommendation: TreeRecommendation) {
+        viewModelScope.launch {
+            val newTree = SavedTree(
+                id = UUID.randomUUID().toString(),
+                species = recommendation.species,
+                notes = "Recommended tree - ${recommendation.description}",
+                areaId = state.area?.id ?: return@launch,
+                dateAdded = System.currentTimeMillis(),
+                suitabilityScore = recommendation.suitabilityScore,
+                growthRate = recommendation.growthRate,
+                maintainanceLevel = recommendation.maintainanceLevel,
+                soilPreference = recommendation.soilPreference,
+                climatePreference = recommendation.climatePreference
+            )
+
+            firestoreRepository.saveTree(newTree)
+                .onSuccess {
+                    // Update state with new tree
+                    state = state.copy(
+                        savedTrees = state.savedTrees + newTree
+                    )
+                    
+                    // Navigate to planting guide
+                    navigateToPlantingGuide(newTree.id, newTree.species)
+                }
+                .onFailure { error ->
+                    state = state.copy(
+                        error = "Failed to save tree: ${error.message}"
+                    )
+                }
+        }
+    }
+
+    private fun navigateToPlantingGuide(treeId: String, species: String) {
+        state = state.copy(
+            navigationEvent = Screen.PlantingGuide.createRoute(
+                treeId = treeId,
+                species = species
+            )
+        )
+    }
+
+    fun resetNavigationEvent() {
+        state = state.copy(navigationEvent = null)
     }
 }

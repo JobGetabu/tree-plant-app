@@ -64,6 +64,15 @@ fun AreaDetailScreen(
 ) {
     val state = viewModel.state
 
+    // Handle navigation events
+    LaunchedEffect(state.navigationEvent) {
+        state.navigationEvent?.let { route ->
+            navController.navigate(route)
+            // Reset navigation event after handling
+            viewModel.resetNavigationEvent()
+        }
+    }
+
     LaunchedEffect(areaId) {
         viewModel.loadArea(areaId)
     }
@@ -139,14 +148,7 @@ fun AreaDetailScreen(
                                 items(state.treeRecommendations) { recommendation ->
                                     TreeRecommendationCard(
                                         recommendation = recommendation,
-                                        onStartPlanting = { selectedTree ->
-                                            navController.navigate(
-                                                Screen.PlantingGuide.createRoute(
-                                                    treeId = selectedTree.id,
-                                                    species = selectedTree.species
-                                                )
-                                            )
-                                        }
+                                        onStartPlanting = viewModel::onStartPlanting
                                     )
                                 }
                             } else {
