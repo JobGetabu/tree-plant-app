@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -81,7 +82,12 @@ fun AreaDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Area Details") },
+                title = { 
+                    Text(
+                        text = "${state.area?.name ?: ""} Details",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -305,14 +311,14 @@ private fun AreaMap(
     }
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(center, 15f)
+        position = CameraPosition.fromLatLngZoom(center, 7f)
     }
 
-    // Zoom to area when map is ready
+    // Zoom to area when map is ready with smoother animation
     LaunchedEffect(center) {
         cameraPositionState.animate(
-            update = CameraUpdateFactory.newLatLngZoom(center, 15f),
-            durationMs = 1000
+            update = CameraUpdateFactory.newLatLngZoom(center, 10f),
+            durationMs = 3000  // Increased duration to 2 seconds
         )
     }
 
@@ -329,8 +335,8 @@ private fun AreaMap(
         ) {
             Polygon(
                 points = polygonPoints,
-                fillColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                strokeColor = MaterialTheme.colorScheme.primary,
+                fillColor = Color(0x4DFFD700),  // Semi-transparent golden yellow
+                strokeColor = Color(0xFFFFD700), // Solid golden yellow
                 strokeWidth = 2f
             )
         }

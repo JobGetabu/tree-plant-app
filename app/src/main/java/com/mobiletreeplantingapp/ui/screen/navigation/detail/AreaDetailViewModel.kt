@@ -1,5 +1,6 @@
 package com.mobiletreeplantingapp.ui.screen.navigation.detail
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -8,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
 import com.mobiletreeplantingapp.data.model.SavedArea
 import com.mobiletreeplantingapp.data.model.SavedTree
+import com.mobiletreeplantingapp.data.model.SoilAnalysis
 import com.mobiletreeplantingapp.data.model.SoilData
 import com.mobiletreeplantingapp.data.model.TreeRecommendation
 import com.mobiletreeplantingapp.data.remote.SoilApiService
@@ -64,13 +66,13 @@ class AreaDetailViewModel @Inject constructor(
             state = state.copy(isLoadingRecommendations = true)
             
             try {
-                // Get the centroid of the area for soil data
                 val centroid = area.points.let { points ->
                     val lat = points.map { it.latitude }.average()
                     val lng = points.map { it.longitude }.average()
                     LatLng(lat, lng)
                 }
                 
+                Log.d("AreaDetailViewModel", "Fetching soil data for: $centroid")
                 val soilResponse = soilApiService.getSoilData(
                     latitude = centroid.latitude,
                     longitude = centroid.longitude
@@ -78,19 +80,30 @@ class AreaDetailViewModel @Inject constructor(
 
                 if (soilResponse.isSuccessful && soilResponse.body() != null) {
                     val soilData = soilResponse.body()!!
+                    Log.d("AreaDetailViewModel", "Received soil data: $soilData")
                     
-                    // Determine soil type from soil data
-                    val soilType = determineSoilType(soilData)
+                    // Create soil analysis from API data
+                    val soilAnalysis = createSoilAnalysis(soilData)
+                    Log.d("AreaDetailViewModel", "Created soil analysis: $soilAnalysis")
+                    
+                    // Update area with new soil analysis
+                    val updatedArea = area.copy(soilAnalysis = soilAnalysis)
+                    
+                    // Update state with the new area containing soil analysis
+                    state = state.copy(
+                        area = updatedArea,
+                        soilData = soilData
+                    )
+                    Log.d("AreaDetailViewModel", "Updated state with new area: ${state.area?.soilAnalysis}")
                     
                     // Get recommendations from Firestore
                     firestoreRepository.getTreeRecommendations(
-                        soilType = soilType,
+                        soilType = determineSoilType(soilData),
                         elevation = area.elevation,
                         climateZone = area.climateZone
                     ).collect { result ->
                         result.onSuccess { recommendations ->
                             state = state.copy(
-                                soilData = soilData,
                                 treeRecommendations = recommendations.map { data ->
                                     TreeRecommendation(
                                         id = data.id,
@@ -107,13 +120,14 @@ class AreaDetailViewModel @Inject constructor(
                                 error = null
                             )
                         }.onFailure { error ->
-                            handleRecommendationError(error, area)
+                            handleRecommendationError(error, updatedArea)
                         }
                     }
                 } else {
-                    throw Exception("Failed to fetch soil data")
+                    throw Exception("Failed to fetch soil data: ${soilResponse.errorBody()?.string()}")
                 }
             } catch (e: Exception) {
+                Log.e("AreaDetailViewModel", "Error loading recommendations", e)
                 handleRecommendationError(e, area)
             }
         }
@@ -130,6 +144,54 @@ class AreaDetailViewModel @Inject constructor(
             clayContent > 40 -> "clay"
             sandContent > 50 -> "sandy"
             else -> "loamy"
+        }
+    }
+
+    private fun createSoilAnalysis(soilData: SoilData): SoilAnalysis {
+        val clayLayer = soilData.properties.layers.find { it.name == "clay" }
+        val sandLayer = soilData.properties.layers.find { it.name == "sand" }
+        val phLayer = soilData.properties.layers.find { it.name == "phh2o" }
+        
+        val clayContent = clayLayer?.depths?.firstOrNull()?.values?.mean?.div(10) ?: 0.0
+        val sandContent = sandLayer?.depths?.firstOrNull()?.values?.mean?.div(10) ?: 0.0
+        val ph = phLayer?.depths?.firstOrNull()?.values?.mean ?: 0.0
+        
+        // Calculate estimated nutrient levels based on soil composition
+        val nitrogen = calculateNutrientLevel(clayContent, sandContent, 30.0)
+        val phosphorus = calculateNutrientLevel(clayContent, sandContent, 20.0)
+        val potassium = calculateNutrientLevel(clayContent, sandContent, 25.0)
+        
+        return SoilAnalysis(
+            ph = ph,
+            nitrogen = nitrogen,
+            phosphorus = phosphorus,
+            potassium = potassium,
+            texture = determineTexture(clayContent, sandContent),
+            drainage = determineDrainage(clayContent, sandContent),
+            depth = 30.0  // Default depth from API query
+        )
+    }
+
+    private fun calculateNutrientLevel(clay: Double, sand: Double, baseLevel: Double): Double {
+        // Higher clay content generally means higher nutrient retention
+        val clayFactor = clay / 100.0
+        val sandFactor = sand / 100.0
+        return (baseLevel * (1 + clayFactor - sandFactor)).coerceIn(5.0, 50.0)
+    }
+
+    private fun determineTexture(clay: Double, sand: Double): String {
+        return when {
+            clay > 40 -> "Clay"
+            sand > 50 -> "Sandy"
+            else -> "Loamy"
+        }
+    }
+
+    private fun determineDrainage(clay: Double, sand: Double): String {
+        return when {
+            sand > 50 -> "Well-drained"
+            clay > 40 -> "Poorly drained"
+            else -> "Moderately drained"
         }
     }
 

@@ -1,5 +1,6 @@
 package com.mobiletreeplantingapp.ui.screen.navigation.detail.components
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -39,6 +40,7 @@ fun TopographyAndSoilCard(
     soilAnalysis: SoilAnalysis,
     modifier: Modifier = Modifier
 ) {
+    Log.d("TopographyAndSoilCard", "Received soil analysis: $soilAnalysis")
     var isExpanded by remember { mutableStateOf(false) }
 
     Card(
