@@ -5,6 +5,7 @@ import com.mobiletreeplantingapp.data.model.TreeProgress
 import com.mobiletreeplantingapp.data.model.GuideStep
 import com.mobiletreeplantingapp.data.model.SavedTree
 import com.mobiletreeplantingapp.data.model.UserStats
+import com.mobiletreeplantingapp.data.model.TreeRecommendationData
 import kotlinx.coroutines.flow.Flow
 
 interface FirestoreRepository {
@@ -25,5 +26,11 @@ interface FirestoreRepository {
     suspend fun getTreeProgress(treeId: String): Flow<Result<TreeProgress?>>
     
     fun getUserStats(): Flow<Result<UserStats>>
+    
+    suspend fun getTreeRecommendations(
+        soilType: String,
+        elevation: Double,
+        climateZone: String
+    ): Flow<Result<List<TreeRecommendationData>>>
 }
 

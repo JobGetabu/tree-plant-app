@@ -20,6 +20,7 @@ import com.google.firebase.firestore.Query
 import com.mobiletreeplantingapp.data.model.SavedTree
 import com.google.firebase.firestore.DocumentSnapshot
 import com.mobiletreeplantingapp.data.model.UserStats
+import com.mobiletreeplantingapp.data.model.TreeRecommendationData
 
 @Singleton
 class FirestoreRepositoryImpl @Inject constructor(
@@ -393,6 +394,35 @@ class FirestoreRepositoryImpl @Inject constructor(
         "areaId" to areaId,
         "dateAdded" to dateAdded
     )
+
+    override suspend fun getTreeRecommendations(
+        soilType: String,
+        elevation: Double,
+        climateZone: String
+    ): Flow<Result<List<TreeRecommendationData>>> = callbackFlow {
+        val query = firestore.collection("tree_recommendations")
+            .whereArrayContains("suitableSoilTypes", soilType.lowercase())
+            .whereLessThanOrEqualTo("maxElevation", elevation)
+            .orderBy("maxElevation")
+
+        val listener = query.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                trySend(Result.failure(error))
+                return@addSnapshotListener
+            }
+
+            val recommendations = snapshot?.documents?.mapNotNull { doc ->
+                doc.toObject(TreeRecommendationData::class.java)
+            }?.filter { recommendation ->
+                recommendation.minElevation <= elevation &&
+                recommendation.suitableClimateZones.contains(climateZone.lowercase())
+            }?.sortedByDescending { it.suitabilityScore } ?: emptyList()
+
+            trySend(Result.success(recommendations))
+        }
+
+        awaitClose { listener.remove() }
+    }
 
     companion object {
         private const val TAG = "FirestoreRepositoryImpl"

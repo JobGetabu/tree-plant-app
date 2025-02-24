@@ -50,6 +50,7 @@ import com.mobiletreeplantingapp.data.model.ForumPost
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.mobiletreeplantingapp.ui.component.ArticleListItem
+import com.mobiletreeplantingapp.ui.util.TreeRecommendationSeeder
 import com.mobiletreeplantingapp.ui.util.formatRelativeTime
 
 @Composable
@@ -66,6 +67,7 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         // Comment this out after seeding the data
         // viewModel.seedSampleData()
+       // TreeRecommendationSeeder.seedTreeRecommendations()
     }
 
     Column(
