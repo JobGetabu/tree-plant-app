@@ -10,7 +10,7 @@ import dagger.hilt.android.HiltAndroidApp
 import androidx.work.Configuration
 
 @HiltAndroidApp
-class FirebaseAuthApp: Application(), Configuration.Provider {
+class TreePlantingApp: Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()

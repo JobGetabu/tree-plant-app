@@ -1,6 +1,6 @@
 <resources>
     // Global
-    <string name="app_name">Firebase Authentication</string>
+    <string name="app_name">Tree Planting App</string>
     <string name="default_web_client_id">802785118139-7glf067cc0lg19ho3h6ojind5bc39rtr.apps.googleusercontent.com</string>
 
     // Login

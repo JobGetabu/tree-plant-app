@@ -21,7 +21,6 @@ import com.mobiletreeplantingapp.data.datastore.OnboardingPreferences
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    
     @Inject
     lateinit var themePreferences: ThemePreferences
     
@@ -33,12 +32,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         var keepSplashScreen = true
-        
         splashScreen.setKeepOnScreenCondition { keepSplashScreen }
         
-        // Simulate some loading work
         lifecycleScope.launch {
-            delay(2000) // 2 seconds delay
+            delay(2000)
             keepSplashScreen = false
         }
 
@@ -53,7 +50,7 @@ class MainActivity : ComponentActivity() {
                 }
             ) {
                 RootNavGraph(
-                    navController = rememberNavController(), 
+                    navController = rememberNavController(),
                     context = this,
                     onboardingPreferences = onboardingPreferences
                 )

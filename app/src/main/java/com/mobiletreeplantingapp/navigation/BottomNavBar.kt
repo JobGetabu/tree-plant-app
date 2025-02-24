@@ -25,7 +25,8 @@ fun BottomNavBar(navController: NavController) {
     if (currentRoute?.startsWith("area_detail") == true || 
         currentRoute?.startsWith("planting_guide") == true ||
         currentRoute?.startsWith("forum_post") == true ||
-        currentRoute?.startsWith("article") == true) {
+        currentRoute?.startsWith("article") == true ||
+        currentRoute?.startsWith("all_articles") == true) {
         return
     }
 

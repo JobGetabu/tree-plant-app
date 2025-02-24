@@ -144,7 +144,9 @@ dependencies {
 
     implementation ("androidx.work:work-runtime-ktx:2.8.1")
     implementation ("androidx.hilt:hilt-work:1.0.0")
-
     implementation ("com.google.firebase:firebase-messaging-ktx")
+    implementation ("com.google.android.material:material:1.9.0")
+
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
 
 }
