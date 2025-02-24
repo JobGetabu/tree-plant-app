@@ -10,11 +10,12 @@ data class PlantingGuideState(
         species = "",
         completedSteps = emptyList(),
         photos = emptyList(),
-        nextMilestone = null
     ),
     val guideSteps: List<GuideStep> = emptyList(),
     val isLoading: Boolean = false,
     val isUploadingPhoto: Boolean = false,
     val error: String? = null,
     val isUploading: Boolean = false,
-) 
+)
+
+

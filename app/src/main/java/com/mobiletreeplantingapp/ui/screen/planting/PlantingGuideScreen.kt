@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mobiletreeplantingapp.data.model.TreeProgress
@@ -40,6 +41,9 @@ import com.mobiletreeplantingapp.ui.screen.planting.components.PhotoGallery
 import com.mobiletreeplantingapp.ui.screen.planting.components.Timeline
 import com.mobiletreeplantingapp.ui.screen.planting.components.PlantingSteps
 import com.mobiletreeplantingapp.ui.util.formatDate
+import androidx.compose.material3.Button
+import androidx.compose.runtime.collectAsState
+import com.mobiletreeplantingapp.data.model.GuideStep
 
 private const val totalSteps = 4 // Default number of steps
 
@@ -51,7 +55,7 @@ fun PlantingGuideScreen(
     viewModel: PlantingGuideViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit
 ) {
-    val state = viewModel.state
+    val state by viewModel.state.collectAsState()
     
     // Initialize the tree progress when the screen loads
     LaunchedEffect(Unit) {
@@ -59,58 +63,66 @@ fun PlantingGuideScreen(
         viewModel.initializeTreeProgress(treeId, species)
     }
 
-    // Show loading state
-    if (state.isLoading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-        return
-    }
-
-    // Show error state
-    if (state.error != null) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = state.error ?: "Unknown error occurred",
-                color = MaterialTheme.colorScheme.error
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Planting Guide") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, "Back")
+                    }
+                }
             )
         }
-        return
-    }
-
-    // Only show content when tree is properly initialized
-    if (state.progress.treeId.isNotBlank()) {
-        // Your existing screen content
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Planting Guide") },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(Icons.Default.ArrowBack, "Back")
-                        }
-                    }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // Show loading state
+            if (state.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
                 )
+                return@Box
             }
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-            ) {
-                // Progress Overview
-                ProgressOverview(
-                    progress = state.progress,
-                    modifier = Modifier.padding(16.dp)
-                )
 
-                // Tabs for Guide/Timeline/Photos
+            // Show error state
+            if (state.error != null) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = state.error ?: "Unknown error occurred",
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center
+                    )
+                    Button(
+                        onClick = { viewModel.initializeTreeProgress(treeId, species) },
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Text("Retry")
+                    }
+                }
+                return@Box
+            }
+
+            // Main content
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Progress Overview with guideSteps
+                if (state.progress.treeId.isNotBlank()) {
+                    ProgressOverview(
+                        progress = state.progress,
+                        guideSteps = state.guideSteps,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+                }
+
+                // Tabs
                 var selectedTab by remember { mutableStateOf(0) }
                 TabRow(selectedTabIndex = selectedTab) {
                     Tab(
@@ -130,12 +142,17 @@ fun PlantingGuideScreen(
                     )
                 }
 
+                // Tab content
                 when (selectedTab) {
                     0 -> PlantingSteps(
                         steps = state.guideSteps,
+                        completedSteps = state.progress.completedSteps,
                         onStepCompleted = viewModel::markStepCompleted
                     )
-                    1 -> Timeline(progress = state.progress)
+                    1 -> Timeline(
+                        progress = state.progress,
+                        guideSteps = state.guideSteps
+                    )
                     2 -> PhotoGallery(
                         photos = state.progress.photos,
                         onAddPhoto = viewModel::addPhoto,
@@ -152,42 +169,77 @@ fun PlantingGuideScreen(
 @Composable
 private fun ProgressOverview(
     progress: TreeProgress,
+    guideSteps: List<GuideStep>,
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        ) {
             Text(
                 text = progress.species,
                 style = MaterialTheme.typography.titleLarge
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
-            LinearProgressIndicator(
-                progress = if (totalSteps > 0) {
-                    progress.completedSteps.size.toFloat() / totalSteps
-                } else {
-                    0f
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            progress.nextMilestone?.let { milestone ->
+            // Progress section with actual total steps
+            Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Next: ${milestone.title}",
+                        text = "Progress",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
-                        text = "Due: ${formatDate(milestone.dueDate)}",
+                        text = "${progress.completedSteps.size}/${guideSteps.size}",
                         style = MaterialTheme.typography.bodyMedium
                     )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                LinearProgressIndicator(
+                    progress = if (guideSteps.isNotEmpty()) {
+                        progress.completedSteps.size.toFloat() / guideSteps.size
+                    } else {
+                        0f
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Next milestone section
+            progress.nextMilestone?.let { milestone ->
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Next Milestone",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = milestone.title,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = formatDate(milestone.dueDate),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
                 }
             }
         }

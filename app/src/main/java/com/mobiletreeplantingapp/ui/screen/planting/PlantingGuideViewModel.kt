@@ -14,58 +14,80 @@ import com.mobiletreeplantingapp.data.repository.StorageRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import androidx.lifecycle.SavedStateHandle
 
 @HiltViewModel
 class PlantingGuideViewModel @Inject constructor(
     private val firestoreRepository: FirestoreRepository,
     private val storageRepository: StorageRepository,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-    var state by mutableStateOf(PlantingGuideState())
-        private set
+
+    private val treeId: String = checkNotNull(savedStateHandle.get<String>("treeId"))
+    private val species: String = checkNotNull(savedStateHandle.get<String>("species"))
+
+    private val _state = MutableStateFlow(PlantingGuideState())
+    val state = _state.asStateFlow()
+
+    init {
+        Log.d(TAG, "Initializing ViewModel with treeId: $treeId, species: $species")
+        loadTreeProgress()
+    }
 
     fun initializeTreeProgress(treeId: String, species: String) {
-        if (treeId.isBlank() || species.isBlank()) {
-            state = state.copy(error = "Invalid tree ID or species")
-            return
-        }
+        Log.d(TAG, "Reinitializing tree progress with treeId: $treeId, species: $species")
+        loadTreeProgress()
+    }
 
+    private fun loadTreeProgress() {
         viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+            
             try {
-                Log.d(TAG, "Initializing tree progress for treeId: $treeId, species: $species")
-                state = state.copy(isLoading = true, error = null)
+                // Get guide steps for the species
+                val steps = firestoreRepository.getGuideSteps(species)
+                Log.d(TAG, "Loaded ${steps.size} guide steps")
 
-                // Create initial progress
-                val initialProgress = TreeProgress(
-                    treeId = treeId,
-                    species = species,
-                    plantedDate = System.currentTimeMillis(),
-                    completedSteps = emptyList(),
-                    photos = emptyList()
-                )
+                // Start collecting tree progress
+                firestoreRepository.getTreeProgress(treeId).collect { result ->
+                    result.fold(
+                        onSuccess = { progress ->
+                            val currentProgress = progress ?: TreeProgress(
+                                treeId = treeId,
+                                species = species,
+                                startDate = System.currentTimeMillis()
+                            )
+                            Log.d(TAG, "Loaded progress with ${currentProgress.completedSteps.size} completed steps")
+                            
+                            _state.value = _state.value.copy(
+                                progress = currentProgress,
+                                guideSteps = steps,
+                                isLoading = false
+                            )
 
-                // Save initial progress if it doesn't exist
-                firestoreRepository.saveTreeProgress(initialProgress)
-                    .onSuccess {
-                        state = state.copy(
-                            progress = initialProgress,
-                            isLoading = false
-                        )
-                        Log.d(TAG, "Tree progress initialized: $initialProgress")
-                    }
-                    .onFailure { error ->
-                        Log.e(TAG, "Error initializing tree progress", error)
-                        state = state.copy(
-                            error = "Failed to initialize tree: ${error.message}",
-                            isLoading = false
-                        )
-                    }
+                            // If this is a new progress, save it to Firestore
+                            if (progress == null) {
+                                firestoreRepository.updateTreeProgress(currentProgress)
+                            }
+                        },
+                        onFailure = { error ->
+                            Log.e(TAG, "Error loading progress", error)
+                            _state.value = _state.value.copy(
+                                error = "Failed to load progress: ${error.message}",
+                                isLoading = false
+                            )
+                        }
+                    )
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Error in initializeTreeProgress", e)
-                state = state.copy(
-                    error = "Failed to initialize tree: ${e.message}",
+                Log.e(TAG, "Error in loadTreeProgress", e)
+                _state.value = _state.value.copy(
+                    error = "Failed to load tree progress: ${e.message}",
                     isLoading = false
                 )
             }
@@ -74,22 +96,51 @@ class PlantingGuideViewModel @Inject constructor(
 
     fun markStepCompleted(stepId: Int) {
         viewModelScope.launch {
-            val updatedSteps = state.progress.completedSteps + stepId
-            firestoreRepository.updateTreeProgress(
-                state.progress.copy(completedSteps = updatedSteps)
-            )
+            try {
+                val currentProgress = _state.value.progress
+                val updatedSteps = currentProgress.completedSteps.toMutableList()
+                updatedSteps.add(stepId)
+
+                val updatedProgress = currentProgress.copy(
+                    completedSteps = updatedSteps,
+                    lastUpdated = System.currentTimeMillis()
+                )
+
+                // Update local state immediately
+                _state.value = _state.value.copy(progress = updatedProgress)
+
+                // Update Firestore
+                firestoreRepository.updateTreeProgress(updatedProgress).fold(
+                    onSuccess = {
+                        Log.d(TAG, "Successfully updated progress with step $stepId")
+                    },
+                    onFailure = { error ->
+                        Log.e(TAG, "Failed to update progress", error)
+                        // Revert local state on failure
+                        _state.value = _state.value.copy(
+                            progress = currentProgress,
+                            error = "Failed to update progress: ${error.message}"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in markStepCompleted", e)
+                _state.value = _state.value.copy(
+                    error = "Failed to mark step as completed: ${e.message}"
+                )
+            }
         }
     }
 
     fun addPhoto(photoUri: Uri) {
         viewModelScope.launch {
             try {
-                state = state.copy(isUploading = true)
+                _state.value = _state.value.copy(isUploading = true)
                 Log.d(TAG, "Starting photo upload process")
 
-                val treeId = state.progress.treeId
+                val treeId = _state.value.progress.treeId
                 if (treeId.isBlank()) {
-                    throw IllegalStateException("No tree ID available. Current progress: ${state.progress}")
+                    throw IllegalStateException("No tree ID available. Current progress: ${_state.value.progress}")
                 }
 
                 Log.d(TAG, "Uploading photo for tree: $treeId")
@@ -100,19 +151,19 @@ class PlantingGuideViewModel @Inject constructor(
                 Log.d(TAG, "Photo uploaded successfully: $photoUrl")
 
                 // Update tree progress with new photo
-                val updatedPhotos = state.progress.photos + photoUrl
-                val updatedProgress = state.progress.copy(photos = updatedPhotos)
+                val updatedPhotos = _state.value.progress.photos + photoUrl
+                val updatedProgress = _state.value.progress.copy(photos = updatedPhotos)
                 
                 firestoreRepository.updateTreeProgress(updatedProgress)
                 Log.d(TAG, "Tree progress updated with new photo")
 
-                state = state.copy(
+                _state.value = _state.value.copy(
                     progress = updatedProgress,
                     isUploading = false
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to upload photo", e)
-                state = state.copy(
+                _state.value = _state.value.copy(
                     error = "Failed to upload photo: ${e.message}",
                     isUploading = false
                 )
@@ -127,12 +178,12 @@ class PlantingGuideViewModel @Inject constructor(
                 storageRepository.deleteTreePhoto(photoUrl)
 
                 // Update tree progress without the deleted photo
-                val updatedPhotos = state.progress.photos - photoUrl
-                val updatedProgress = state.progress.copy(photos = updatedPhotos)
+                val updatedPhotos = _state.value.progress.photos - photoUrl
+                val updatedProgress = _state.value.progress.copy(photos = updatedPhotos)
                 
                 firestoreRepository.updateTreeProgress(updatedProgress)
             } catch (e: Exception) {
-                state = state.copy(
+                _state.value = _state.value.copy(
                     error = "Failed to delete photo: ${e.message}"
                 )
             }
@@ -140,24 +191,14 @@ class PlantingGuideViewModel @Inject constructor(
     }
 
     fun loadPhotos(treeId: String) {
-        if (treeId.isBlank()) {
-            Log.e(TAG, "Cannot load photos: Tree ID is blank")
-            return
-        }
-
         viewModelScope.launch {
             try {
-                Log.d(TAG, "Starting to load photos for tree: $treeId")
-                
-                val photos = storageRepository.getPhotosForTree(treeId)
-                Log.d(TAG, "Successfully loaded ${photos.size} photos")
-                
-                state = state.copy(
-                    progress = state.progress.copy(photos = photos)
-                )
+                // The photos are already being loaded as part of the tree progress
+                // This function is here for completeness and future expansion
+                Log.d(TAG, "Photos already loaded with tree progress")
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading photos", e)
-                state = state.copy(
+                _state.value = _state.value.copy(
                     error = "Failed to load photos: ${e.message}"
                 )
             }

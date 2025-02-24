@@ -289,19 +289,19 @@ class FirestoreRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateTreeProgress(progress: TreeProgress): Result<Unit> = try {
-        val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
+        val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
         
-        treeProgressCollection
+        Log.d(TAG, "Updating tree progress for user: $userId, tree: ${progress.treeId}")
+        
+        val docRef = firestore.collection("users")
+            .document(userId)
+            .collection("tree_progress")
             .document(progress.treeId)
-            .update(
-                progress.toMap().plus(
-                    mapOf(
-                        "updatedAt" to FieldValue.serverTimestamp()
-                    )
-                )
-            )
-            .await()
-            
+        
+        // Always set the full document to ensure all fields are updated
+        docRef.set(progress).await()
+        
+        Log.d(TAG, "Successfully updated tree progress")
         Result.success(Unit)
     } catch (e: Exception) {
         Log.e(TAG, "Error updating tree progress", e)
@@ -309,33 +309,39 @@ class FirestoreRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getTreeProgress(treeId: String): Flow<Result<TreeProgress?>> = callbackFlow {
-        try {
-            val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
-            
-            val listener = treeProgressCollection
-                .document(treeId)
-                .addSnapshotListener { snapshot, error ->
-                    if (error != null) {
-                        trySend(Result.failure(error))
-                        return@addSnapshotListener
-                    }
-
-                    if (snapshot != null && snapshot.exists()) {
-                        try {
-                            val progress = snapshot.toTreeProgress()
-                            trySend(Result.success(progress))
-                        } catch (e: Exception) {
-                            trySend(Result.failure(e))
-                        }
-                    } else {
-                        trySend(Result.success(null))
-                    }
+        val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
+        
+        Log.d(TAG, "Getting tree progress for user: $userId, tree: $treeId")
+        
+        val listener = firestore.collection("users")
+            .document(userId)
+            .collection("tree_progress")
+            .document(treeId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "Error getting tree progress", error)
+                    trySend(Result.failure(error))
+                    return@addSnapshotListener
                 }
 
-            awaitClose { listener.remove() }
-        } catch (e: Exception) {
-            trySend(Result.failure(e))
-            close(e)
+                if (snapshot != null && snapshot.exists()) {
+                    try {
+                        val progress = snapshot.toObject(TreeProgress::class.java)
+                        Log.d(TAG, "Loaded progress: $progress")
+                        trySend(Result.success(progress))
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error converting snapshot to TreeProgress", e)
+                        trySend(Result.failure(e))
+                    }
+                } else {
+                    Log.d(TAG, "No existing progress found for tree: $treeId")
+                    trySend(Result.success(null))
+                }
+            }
+
+        awaitClose { 
+            Log.d(TAG, "Removing tree progress listener")
+            listener.remove() 
         }
     }
 

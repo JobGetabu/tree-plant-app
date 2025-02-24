@@ -17,18 +17,20 @@ import com.mobiletreeplantingapp.data.model.GuideStep
 @Composable
 fun PlantingSteps(
     steps: List<GuideStep>,
+    completedSteps: List<Int>,
     onStepCompleted: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        contentPadding = PaddingValues(16.dp)
     ) {
         items(steps) { step ->
             StepCard(
                 step = step,
-                onComplete = { onStepCompleted(step.id) }
+                isCompleted = step.id in completedSteps,
+                onComplete = { onStepCompleted(step.id) },
+                modifier = Modifier.padding(vertical = 8.dp)
             )
         }
     }
@@ -37,6 +39,7 @@ fun PlantingSteps(
 @Composable
 private fun StepCard(
     step: GuideStep,
+    isCompleted: Boolean,
     onComplete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -44,80 +47,26 @@ private fun StepCard(
         modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = step.title,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = step.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    
-                    step.estimatedTimeMinutes?.let { time ->
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Estimated time: $time minutes",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.width(16.dp))
-                
-                IconButton(
-                    onClick = onComplete,
-                    enabled = !step.isCompleted
-                ) {
-                    Icon(
-                        imageVector = if (step.isCompleted) {
-                            Icons.Default.CheckCircle
-                        } else {
-                            Icons.Default.RadioButtonUnchecked
-                        },
-                        contentDescription = if (step.isCompleted) {
-                            "Step completed"
-                        } else {
-                            "Mark step as completed"
-                        },
-                        tint = if (step.isCompleted) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                }
+                Text(
+                    text = step.title,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Checkbox(
+                    checked = isCompleted,
+                    onCheckedChange = { if (!isCompleted) onComplete() }
+                )
             }
-
-            step.videoUrl?.let { url ->
-                Spacer(modifier = Modifier.height(16.dp))
-                // You can add video player implementation here
-                // For now, just showing a placeholder
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("Video Tutorial")
-                    }
-                }
-            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = step.description,
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
     }
 } 
