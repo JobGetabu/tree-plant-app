@@ -30,9 +30,11 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavController
 import com.mobiletreeplantingapp.navigation.Screen
 import com.mobiletreeplantingapp.ui.component.ThemeSelector
+import coil.compose.AsyncImage
 
 @Composable
 fun SettingsScreen(
@@ -53,42 +55,17 @@ fun SettingsScreen(
                 .padding(16.dp)
         ) {
             // Profile Section
-            ProfileSection(
-                profileImage = painterResource(id = R.drawable.placeholder_profile),
-                name = "John Doe",
-                location = "San Francisco, CA"
-            )
+            ProfileSection()
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Statistics Cards
+            // Updated Statistics Cards
+            val viewModel: SettingsViewModel = hiltViewModel()
             StatisticsSection(
-                treesPlanted = 12,
-                co2Offset = 240,
-                achievements = 3
+                treesPlanted = viewModel.userStats.treesPlanted,
+                co2Offset = viewModel.userStats.co2Offset,
+                totalArea = viewModel.userStats.totalArea
             )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Achievements Section
-            Text(
-                text = "Achievements",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            AchievementsRow()
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Impact Map Section
-            Text(
-                text = "Impact Map",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            ImpactMap()
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -200,32 +177,43 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun ProfileSection(
-    profileImage: Painter,
-    name: String,
-    location: String
-) {
+private fun ProfileSection() {  // Remove parameters
+    val viewModel: SettingsViewModel = hiltViewModel()
+    
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = profileImage,
-            contentDescription = "Profile picture",
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop
-        )
+        if (viewModel.userProfile.photoUrl != null) {
+            AsyncImage(
+                model = viewModel.userProfile.photoUrl,
+                contentDescription = "Profile picture",
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop,
+                error = painterResource(id = R.drawable.placeholder_profile)
+            )
+        } else {
+            Image(
+                painter = painterResource(id = R.drawable.placeholder_profile),
+                contentDescription = "Profile picture",
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+        }
+        
         Spacer(modifier = Modifier.width(16.dp))
         Column {
             Text(
-                text = name,
+                text = viewModel.userProfile.displayName,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = location,
+                text = viewModel.userProfile.email,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -237,7 +225,7 @@ private fun ProfileSection(
 private fun StatisticsSection(
     treesPlanted: Int,
     co2Offset: Int,
-    achievements: Int
+    totalArea: Double
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -254,8 +242,8 @@ private fun StatisticsSection(
             modifier = Modifier.weight(1f)
         )
         StatCard(
-            value = achievements.toString(),
-            label = "Achievements",
+            value = String.format("%.1f m²", totalArea),
+            label = "Total Area",
             modifier = Modifier.weight(1f)
         )
     }
@@ -268,24 +256,32 @@ private fun StatCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.padding(horizontal = 4.dp),
+        modifier = modifier
+            .padding(horizontal = 4.dp)
+            .height(100.dp),  // Fixed height for all cards
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()  // Fill the card's fixed size
+                .padding(8.dp),  // Reduced padding to accommodate longer text
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center  // Center content vertically
         ) {
             Text(
                 text = value,
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,  // Limit to one line
+                overflow = TextOverflow.Ellipsis  // Add ellipsis if text is too long
             )
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

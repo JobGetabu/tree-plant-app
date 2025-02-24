@@ -60,7 +60,9 @@ fun HomeScreen(
     onNavigateToArticle: (String) -> Unit,
     onNavigateToForum: () -> Unit,
     onNavigateToAllArticles: () -> Unit,
-    onNavigateToForumPost: (String) -> Unit
+    onNavigateToForumPost: (String) -> Unit,
+    onNavigateToExplore: () -> Unit,
+    onNavigateToSavedAreas: () -> Unit
 ) {
     val state = viewModel.state
 
@@ -123,6 +125,64 @@ fun HomeScreen(
                     title = "CO₂ Offset",
                     value = "${state.co2Offset}kg"
                 )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Quick Action Buttons
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = onNavigateToExplore,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                ),
+                contentPadding = PaddingValues(vertical = 12.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_add_tree),
+                        contentDescription = "New Planting",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "New Planting",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+            }
+            
+            Button(
+                onClick = onNavigateToSavedAreas,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                ),
+                contentPadding = PaddingValues(vertical = 12.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_my_trees),
+                        contentDescription = "My Trees",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "My Trees",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
             }
         }
 
@@ -286,4 +346,4 @@ private fun ForumPostItem(
             }
         }
     }
-} 
+}

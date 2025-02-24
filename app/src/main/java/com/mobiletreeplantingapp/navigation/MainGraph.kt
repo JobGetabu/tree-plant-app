@@ -52,6 +52,12 @@ fun MainGraph(
                 },
                 onNavigateToForumPost = { postId ->
                     navController.navigate(Screen.ForumPost.createRoute(postId))
+                },
+                onNavigateToExplore = {
+                    navController.navigate(Screen.Explore.route)
+                },
+                onNavigateToSavedAreas = {
+                    navController.navigate(Screen.MyTrees.route)
                 }
             )
         }

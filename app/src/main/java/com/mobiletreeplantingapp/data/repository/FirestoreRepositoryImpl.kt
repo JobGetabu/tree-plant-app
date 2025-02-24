@@ -19,6 +19,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.mobiletreeplantingapp.data.model.SavedTree
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.SetOptions
 import com.mobiletreeplantingapp.data.model.UserStats
 import com.mobiletreeplantingapp.data.model.TreeRecommendationData
 
@@ -34,31 +35,39 @@ class FirestoreRepositoryImpl @Inject constructor(
 
     override suspend fun saveArea(area: SavedArea): Result<Unit> = try {
         Log.d("FirestoreRepo", "Starting to save area: ${area.name}")
+        val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
         
-        // Create a map of the area data
-        val areaMap = hashMapOf(
-            "userId" to area.userId,
-            "name" to area.name,
-            "points" to area.points,
-            "areaSize" to area.areaSize,
-            "soilType" to area.soilType,
-            "elevation" to area.elevation,
-            "climateZone" to area.climateZone,
-            "timestamp" to area.timestamp
+        // Create a batch to perform multiple operations atomically
+        val batch = firestore.batch()
+        
+        // Add area document
+        val areaRef = areasCollection.document()
+        batch.set(
+            areaRef,
+            hashMapOf(
+                "userId" to area.userId,
+                "name" to area.name,
+                "points" to area.points,
+                "areaSize" to area.areaSize,
+                "soilType" to area.soilType,
+                "elevation" to area.elevation,
+                "climateZone" to area.climateZone,
+                "timestamp" to area.timestamp
+            )
         )
 
-        // Use coroutines with Tasks API
-        suspendCancellableCoroutine { continuation ->
-            areasCollection.add(areaMap)
-                .addOnSuccessListener { documentRef ->
-                    Log.d("FirestoreRepo", "Area saved successfully with ID: ${documentRef.id}")
-                    continuation.resume(Result.success(Unit)) {}
-                }
-                .addOnFailureListener { e ->
-                    Log.e("FirestoreRepo", "Error saving area", e)
-                    continuation.resume(Result.failure(e)) {}
-                }
-        }
+        // Update user's total area
+        val userRef = firestore.collection("users").document(userId)
+        batch.set(
+            userRef,
+            mapOf("totalArea" to FieldValue.increment(area.areaSize)),
+            SetOptions.merge()
+        )
+
+        // Commit the batch
+        batch.commit().await()
+        
+        Result.success(Unit)
     } catch (e: Exception) {
         Log.e("FirestoreRepo", "Exception while saving area", e)
         Result.failure(e)
@@ -171,18 +180,36 @@ class FirestoreRepositoryImpl @Inject constructor(
     override suspend fun saveTree(tree: SavedTree): Result<Unit> = try {
         val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
         
-        treesCollection
-            .document(tree.id)
-            .set(
-                tree.toMap().plus(
-                    mapOf(
-                        "userId" to userId,
-                        "createdAt" to FieldValue.serverTimestamp()
-                    )
+        // Create a batch to perform multiple operations atomically
+        val batch = firestore.batch()
+        
+        // Add tree document
+        val treeRef = treesCollection.document(tree.id)
+        batch.set(
+            treeRef,
+            tree.toMap().plus(
+                mapOf(
+                    "userId" to userId,
+                    "createdAt" to FieldValue.serverTimestamp()
                 )
             )
-            .await()
-            
+        )
+        
+        // Update user stats
+        val userRef = firestore.collection("users").document(userId)
+        batch.set(
+            userRef,
+            mapOf(
+                "treesPlanted" to FieldValue.increment(1),
+                "co2Offset" to FieldValue.increment(20), // Assuming average CO2 offset per tree
+                "lastPlantingDate" to FieldValue.serverTimestamp()
+            ),
+            SetOptions.merge()
+        )
+        
+        // Commit the batch
+        batch.commit().await()
+        
         Result.success(Unit)
     } catch (e: Exception) {
         Log.e("FirestoreRepository", "Error saving tree", e)
@@ -347,6 +374,24 @@ class FirestoreRepositoryImpl @Inject constructor(
 
     override fun getUserStats(): Flow<Result<UserStats>> = callbackFlow {
         val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not logged in")
+        
+        // Initialize user stats document if it doesn't exist
+        try {
+            val userDoc = firestore.collection("users").document(userId).get().await()
+            if (!userDoc.exists()) {
+                firestore.collection("users").document(userId)
+                    .set(
+                        mapOf(
+                            "treesPlanted" to 0,
+                            "co2Offset" to 0,
+                            "totalArea" to 0.0
+                        )
+                    )
+                    .await()
+            }
+        } catch (e: Exception) {
+            Log.e("FirestoreRepository", "Error initializing user stats", e)
+        }
         
         val listener = firestore.collection("users")
             .document(userId)
