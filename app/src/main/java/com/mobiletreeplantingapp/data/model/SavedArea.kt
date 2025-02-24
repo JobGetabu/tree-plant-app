@@ -7,8 +7,10 @@ data class SavedArea(
     val name: String = "",
     val points: List<GeoPoint> = emptyList(),
     val areaSize: Double = 0.0,
-    val soilType: String = "",
     val elevation: Double = 0.0,
+    val slope: Double = 0.0,
+    val soilType: String = "",
     val climateZone: String = "",
+    val soilAnalysis: SoilAnalysis = SoilAnalysis(0.0, 0.0, 0.0, 0.0, "", "", 0.0),
     val timestamp: Long = System.currentTimeMillis()
 )

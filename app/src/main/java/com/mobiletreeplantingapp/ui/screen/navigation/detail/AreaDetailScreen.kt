@@ -52,6 +52,7 @@ import com.mobiletreeplantingapp.ui.screen.navigation.detail.components.AddTreeD
 import com.mobiletreeplantingapp.ui.screen.navigation.detail.components.TreeRecommendationCard
 import com.mobiletreeplantingapp.ui.screen.navigation.detail.components.EditTreeDialog
 import com.mobiletreeplantingapp.ui.screen.navigation.detail.components.SavedTreeCard
+import com.mobiletreeplantingapp.ui.screen.navigation.detail.components.TopographyAndSoilCard
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -123,6 +124,15 @@ fun AreaDetailScreen(
 
                         item {
                             AreaInfoCard(area)
+                        }
+
+                        item {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            TopographyAndSoilCard(
+                                elevation = area.elevation,
+                                slope = area.slope,
+                                soilAnalysis = area.soilAnalysis
+                            )
                         }
 
                         item {

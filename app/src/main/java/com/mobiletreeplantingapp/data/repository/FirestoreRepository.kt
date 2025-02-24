@@ -7,6 +7,10 @@ import com.mobiletreeplantingapp.data.model.SavedTree
 import com.mobiletreeplantingapp.data.model.UserStats
 import com.mobiletreeplantingapp.data.model.TreeRecommendationData
 import kotlinx.coroutines.flow.Flow
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CoroutineDispatcher
+import javax.inject.Inject
 
 interface FirestoreRepository {
     suspend fun saveArea(area: SavedArea): Result<Unit>
