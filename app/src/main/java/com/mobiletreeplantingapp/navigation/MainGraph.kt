@@ -26,6 +26,7 @@ import com.mobiletreeplantingapp.ui.screen.navigation.saved.SavedAreasScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsScreen
 import com.mobiletreeplantingapp.ui.screen.planting.PlantingGuideScreen
 import com.mobiletreeplantingapp.ui.screen.article.AllArticlesScreen
+import com.mobiletreeplantingapp.ui.screen.navigation.settings.NotificationSettingsScreen
 
 @Composable
 fun MainGraph(
@@ -111,7 +112,8 @@ fun MainGraph(
                     rootNavController.navigate(Graph.LOGIN) {
                         popUpTo(Graph.ROOT) { inclusive = true }
                     }
-                }
+                },
+                navController = navController
             )
         }
         
@@ -158,6 +160,12 @@ fun MainGraph(
                 onNavigateToArticle = { articleId ->
                     navController.navigate(Screen.Article.createRoute(articleId))
                 }
+            )
+        }
+
+        composable(Screen.NotificationSettings.route) {
+            NotificationSettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

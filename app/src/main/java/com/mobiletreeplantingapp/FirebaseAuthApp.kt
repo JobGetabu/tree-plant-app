@@ -7,9 +7,10 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
 import dagger.hilt.android.HiltAndroidApp
+import androidx.work.Configuration
 
 @HiltAndroidApp
-class FirebaseAuthApp: Application() {
+class FirebaseAuthApp: Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
@@ -20,5 +21,11 @@ class FirebaseAuthApp: Application() {
         if (BuildConfig.DEBUG) {
             Firebase.storage.useEmulator("10.0.2.2", 9199)
         }
+    }
+
+    override fun getWorkManagerConfiguration(): Configuration {
+        return Configuration.Builder()
+            .setMinimumLoggingLevel(android.util.Log.DEBUG)
+            .build()
     }
 }

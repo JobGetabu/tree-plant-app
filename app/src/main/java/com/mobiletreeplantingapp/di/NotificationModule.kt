@@ -4,12 +4,16 @@ import android.app.NotificationManager
 import android.content.Context
 import com.mobiletreeplantingapp.services.NotificationService
 import com.mobiletreeplantingapp.ui.util.NotificationPermissionHandler
+import com.mobiletreeplantingapp.data.repository.PreferencesRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -33,10 +37,18 @@ object NotificationModule {
 
     @Provides
     @Singleton
+    fun provideNotificationScope(): CoroutineScope {
+        return CoroutineScope(Dispatchers.Default + SupervisorJob())
+    }
+
+    @Provides
+    @Singleton
     fun provideNotificationService(
         @ApplicationContext context: Context,
-        permissionHandler: NotificationPermissionHandler
+        permissionHandler: NotificationPermissionHandler,
+        preferencesRepository: PreferencesRepository,
+        scope: CoroutineScope
     ): NotificationService {
-        return NotificationService(context, permissionHandler)
+        return NotificationService(context, permissionHandler, preferencesRepository, scope)
     }
 } 

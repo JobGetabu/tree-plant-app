@@ -430,40 +430,26 @@ class FirestoreRepositoryImpl @Inject constructor(
         awaitClose { listener.remove() }
     }
 
-    override suspend fun getTreeById(treeId: String): Result<SavedTree?> {
-        return try {
-            val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
+    override suspend fun getTreeById(treeId: String): Result<SavedTree?> = try {
+        Log.d(TAG, "Getting tree by ID: $treeId")
+        val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
+        
+        val treeDoc = treesCollection
+            .document(treeId)
+            .get()
+            .await()
 
-            // First get all user's areas
-            val areasSnapshot = firestore.collection("users")
-                .document(userId)
-                .collection("areas")
-                .get()
-                .await()
-
-            // Search for the tree in each area's trees collection
-            for (areaDoc in areasSnapshot.documents) {
-                val treeSnapshot = firestore.collection("users")
-                    .document(userId)
-                    .collection("areas")
-                    .document(areaDoc.id)
-                    .collection("trees")
-                    .whereEqualTo("id", treeId)
-                    .get()
-                    .await()
-
-                val tree = treeSnapshot.documents.firstOrNull()?.toObject(SavedTree::class.java)
-                if (tree != null) {
-                    return Result.success(tree)
-                }
-            }
-
-            // Tree not found
+        if (treeDoc.exists()) {
+            Log.d(TAG, "Found tree document")
+            val tree = treeDoc.toObject(SavedTree::class.java)
+            Result.success(tree)
+        } else {
+            Log.w(TAG, "Tree document not found")
             Result.success(null)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error getting tree by ID", e)
-            Result.failure(e)
         }
+    } catch (e: Exception) {
+        Log.e(TAG, "Error getting tree by ID", e)
+        Result.failure(e)
     }
 
     companion object {

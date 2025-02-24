@@ -28,14 +28,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavController
+import com.mobiletreeplantingapp.navigation.Screen
 import com.mobiletreeplantingapp.ui.component.ThemeSelector
 
 @Composable
 fun SettingsScreen(
     innerPadding: PaddingValues,
     settingsViewModel: SettingsViewModel = hiltViewModel(),
-    navigateToLogin: () -> Unit
+    navigateToLogin: () -> Unit,
+    navController: NavController
 ) {
     Box(
         modifier = Modifier
@@ -139,6 +143,39 @@ fun SettingsScreen(
                         currentTheme = settingsViewModel.currentTheme,
                         onThemeSelected = { settingsViewModel.setTheme(it) }
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Notification Settings Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                    .clickable { navController.navigate(Screen.NotificationSettings.route) },
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Notification Settings",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
             }
 

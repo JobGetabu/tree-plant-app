@@ -7,23 +7,20 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import androidx.hilt.work.HiltWorker
-import androidx.work.CoroutineWorker
+import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.mobiletreeplantingapp.R
 import com.mobiletreeplantingapp.ui.MainActivity
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
 import android.util.Log
 
-@HiltWorker
-class ReminderWorker @AssistedInject constructor(
-    @Assisted private val context: Context,
-    @Assisted workerParams: WorkerParameters,
-    private val notificationManager: NotificationManager
-) : CoroutineWorker(context, workerParams) {
+class ReminderWorker(
+    private val context: Context,
+    workerParams: WorkerParameters
+) : Worker(context, workerParams) {
 
-    override suspend fun doWork(): Result {
+    private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+    override fun doWork(): Result {
         Log.d(TAG, "Starting reminder work")
         
         val title = inputData.getString("title") ?: return Result.failure()
@@ -57,7 +54,6 @@ class ReminderWorker @AssistedInject constructor(
     }
 
     private fun showNotification(title: String, message: String, treeId: String) {
-        // Create an intent to open the app
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("treeId", treeId)

@@ -6,33 +6,55 @@ import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.mobiletreeplantingapp.data.model.SavedTree
+import com.mobiletreeplantingapp.data.repository.PreferencesRepository
 import com.mobiletreeplantingapp.workers.ReminderWorker
 import com.mobiletreeplantingapp.ui.util.NotificationPermissionHandler
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class NotificationService @Inject constructor(
     private val context: Context,
-    private val permissionHandler: NotificationPermissionHandler
+    private val permissionHandler: NotificationPermissionHandler,
+    private val preferencesRepository: PreferencesRepository,
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 ) {
     fun scheduleAllReminders(tree: SavedTree, isTestMode: Boolean = false) {
         if (!permissionHandler.hasNotificationPermission()) {
             Log.w(TAG, "Notification permission not granted")
             return
         }
-        
-        Log.d(TAG, "Scheduling all reminders for tree: ${tree.id}, test mode: $isTestMode")
-        
-        scheduleWateringReminders(tree, isTestMode)
-        schedulePruningReminders(tree, isTestMode)
-        scheduleFertilizingReminders(tree, isTestMode)
-        scheduleInspectionReminders(tree, isTestMode)
-        scheduleGrowthCheckReminders(tree, isTestMode)
+
+        scope.launch {
+            try {
+                val preferences = preferencesRepository.getNotificationPreferences()
+                
+                if (preferences.wateringEnabled) {
+                    scheduleWateringReminders(tree, isTestMode)
+                }
+                if (preferences.pruningEnabled) {
+                    schedulePruningReminders(tree, isTestMode)
+                }
+                if (preferences.fertilizingEnabled) {
+                    scheduleFertilizingReminders(tree, isTestMode)
+                }
+                if (preferences.inspectionEnabled) {
+                    scheduleInspectionReminders(tree, isTestMode)
+                }
+                if (preferences.growthCheckEnabled) {
+                    scheduleGrowthCheckReminders(tree, isTestMode)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error scheduling reminders", e)
+            }
+        }
     }
 
     fun scheduleWateringReminders(tree: SavedTree, isTestMode: Boolean = false) {
         val wateringDays = if (isTestMode) {
-            listOf(2L, 4L, 6L, 8L) // Minutes for testing
+            listOf(1L, 2L, 3L, 4L) // Minutes for testing
         } else {
             listOf(7L, 14L, 21L, 28L, 35L, 42L) // Days for production
         }

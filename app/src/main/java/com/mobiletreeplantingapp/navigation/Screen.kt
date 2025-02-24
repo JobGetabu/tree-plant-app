@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Forest
 import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Landscape
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Park
 import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.Home
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Forest
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Landscape
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Park
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -111,4 +113,11 @@ sealed class Screen(
     }
 
     object AllArticles : Screen("all_articles", "All Articles", Icons.Filled.Article, Icons.Outlined.Article)
+
+    object NotificationSettings : Screen(
+        route = "notification_settings",
+        title = "Notification Settings",
+        selectedIcon = Icons.Filled.Notifications,
+        unselectedIcon = Icons.Outlined.Notifications
+    )
 } 
