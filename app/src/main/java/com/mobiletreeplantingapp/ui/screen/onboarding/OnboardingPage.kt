@@ -9,20 +9,20 @@ sealed class OnboardingPage(
     val description: String
 ) {
     object First : OnboardingPage(
-        image = R.drawable.img1,
-        title = "Plant Trees",
-        description = "Join our community in making the world greener, one tree at a time"
+        image = R.drawable.image,
+        title = "Find Your Planting Spot!",
+        description = "Use our GPS and interactive maps to select the perfect area for your trees. Get detailed info on size, geography, and more!"
     )
     
     object Second : OnboardingPage(
-        image = R.drawable.img1,
-        title = "Track Growth",
-        description = "Monitor your trees' growth and impact on the environment"
+        image = R.drawable.image1,
+        title = "Pick the Right Trees!",
+        description = "Browse our database of tree species and get recommendations based on your area’s climate, altitude, and soil."
     )
     
     object Third : OnboardingPage(
-        image = R.drawable.img1,
-        title = "Join Community",
-        description = "Connect with other tree planters and share your green journey"
+        image = R.drawable.image2,
+        title = "Watch Your Trees Thrive!",
+        description = "Track growth, follow care tips, and stay on top of watering, pruning, and protection with our step-by-step guides."
     )
 } 

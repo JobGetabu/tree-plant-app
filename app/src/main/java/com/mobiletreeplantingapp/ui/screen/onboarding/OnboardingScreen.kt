@@ -98,22 +98,27 @@ private fun OnboardingPage(page: OnboardingPage) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(16.dp),  // Reduced padding for even wider content
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Image(
             painter = painterResource(id = page.image),
             contentDescription = null,
-            modifier = Modifier.size(250.dp)
+            modifier = Modifier
+                .fillMaxWidth(1f)  // Increased from 0.9f to 0.95f
+                .heightIn(min = 320.dp)  // Slightly increased minimum height
+                .padding(horizontal = 8.dp)  // Reduced horizontal padding
         )
         
         Spacer(modifier = Modifier.height(32.dp))
         
         Text(
             text = page.title,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground  // Ensures visibility in dark theme
+            ),
             textAlign = TextAlign.Center
         )
         
@@ -121,9 +126,10 @@ private fun OnboardingPage(page: OnboardingPage) {
         
         Text(
             text = page.description,
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+            style = MaterialTheme.typography.bodyLarge.copy(
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)  // Better dark theme contrast
+            ),
+            textAlign = TextAlign.Center
         )
     }
-} 
+}

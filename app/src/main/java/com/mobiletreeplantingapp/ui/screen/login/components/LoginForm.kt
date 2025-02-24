@@ -59,8 +59,9 @@ fun LoginForm(
             contentDescription = "Enter email",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 6.dp)
-                .padding(horizontal = 20.dp),
+                .padding(bottom = 16.dp)
+                .padding(horizontal = 16.dp)
+                .height(65.dp), // Increased height
             leadingIcon = Icons.Outlined.Email,
             keyboardOptions = KeyboardOptions(
                 autoCorrect = false,
@@ -75,7 +76,7 @@ fun LoginForm(
             isEnabled = !state.isLoading
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         CustomPasswordTextField(
             value = state.password,
@@ -83,8 +84,9 @@ fun LoginForm(
             contentDescription = "Enter password",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 6.dp)
-                .padding(horizontal = 20.dp),
+                .padding(bottom = 16.dp)
+                .padding(horizontal = 16.dp)
+                .height(65.dp), // Increased height
             isError = state.passwordError != null,
             errorMessage = state.passwordError,
             isEnabled = !state.isLoading,
@@ -135,7 +137,9 @@ fun LoginForm(
         }
 
         SignInGoogleButton(
-            onClick = { viewModel.loginWithGoogleLauncher(launcher = googleSignInLauncher) }
+            onClick = { viewModel.loginWithGoogleLauncher(launcher = googleSignInLauncher) },
+            isLoading = state.isLoading, // Add loading state
+            enabled = !state.isLoading
         )
 
         Spacer(modifier = Modifier.height(32.dp))

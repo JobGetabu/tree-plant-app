@@ -50,8 +50,9 @@ fun SignUpForm(
             contentDescription = "Enter email",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 6.dp)
-                .padding(horizontal = 20.dp),
+                .padding(bottom = 16.dp)
+                .padding(horizontal = 16.dp)
+                .height(65.dp), // Increased height
             leadingIcon = Icons.Outlined.Email,
             keyboardOptions = KeyboardOptions(
                 autoCorrect = false,
@@ -66,7 +67,7 @@ fun SignUpForm(
             isEnabled = !state.isLoading
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         CustomPasswordTextField(
             value = state.password,
@@ -74,8 +75,9 @@ fun SignUpForm(
             contentDescription = "Enter password",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 6.dp)
-                .padding(horizontal = 20.dp),
+                .padding(bottom = 16.dp)
+                .padding(horizontal = 16.dp)
+                .height(65.dp), // Increased height
             isEnabled = !state.isLoading,
             isError = state.passwordError != null,
             keyboardOptions = KeyboardOptions(
@@ -89,7 +91,7 @@ fun SignUpForm(
             })
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         CustomPasswordTextField(
             value = state.repeatPassword,
@@ -97,8 +99,9 @@ fun SignUpForm(
             contentDescription = "Enter password",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 6.dp)
-                .padding(horizontal = 20.dp),
+                .padding(bottom = 16.dp)
+                .padding(horizontal = 16.dp)
+                .height(65.dp), // Increased height
             isEnabled = !state.isLoading,
             isError = state.passwordError != null,
             errorMessage = state.passwordError,

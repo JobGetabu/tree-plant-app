@@ -1,39 +1,62 @@
 package com.mobiletreeplantingapp.ui.component
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mobiletreeplantingapp.R
 
 @Composable
 fun SignInGoogleButton(
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isLoading: Boolean = false,
+    enabled: Boolean = true
 ) {
-    Button(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        onClick = onClick
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled && !isLoading,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Image(
-            painter = painterResource(
-                id = R.drawable.ic_google_logo
-            ),
-            contentDescription = null
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Text(
-            text = stringResource(id = R.string.sign_in_google)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AnimatedContent(
+                targetState = isLoading,
+                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                label = "loading_animation"
+            ) { loading ->
+                if (loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_google_logo),
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Sign in with Google")
+                    }
+                }
+            }
+        }
     }
 }

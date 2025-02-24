@@ -9,7 +9,6 @@ import androidx.navigation.compose.rememberNavController
 import com.mobiletreeplantingapp.data.datastore.ThemeMode
 import com.mobiletreeplantingapp.data.datastore.ThemePreferences
 import com.mobiletreeplantingapp.navigation.RootNavGraph
-import com.mobiletreeplantingapp.ui.theme.FirebaseAuthenticationTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -18,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.mobiletreeplantingapp.data.datastore.OnboardingPreferences
+import com.mobiletreeplantingapp.ui.theme.AppTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -41,8 +41,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val currentTheme by themePreferences.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
-            
-            FirebaseAuthenticationTheme(
+
+            AppTheme(
                 darkTheme = when (currentTheme) {
                     ThemeMode.DARK -> true
                     ThemeMode.LIGHT -> false

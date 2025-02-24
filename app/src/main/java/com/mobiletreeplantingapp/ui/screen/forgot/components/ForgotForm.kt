@@ -44,8 +44,9 @@ fun ForgotForm(
             contentDescription = "Enter email",
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 6.dp)
-                .padding(horizontal = 20.dp),
+                .padding(bottom = 16.dp)
+                .padding(horizontal = 16.dp)
+                .height(65.dp), // Increased height
             leadingIcon = Icons.Outlined.Email,
             keyboardOptions = KeyboardOptions(
                 autoCorrect = false,
