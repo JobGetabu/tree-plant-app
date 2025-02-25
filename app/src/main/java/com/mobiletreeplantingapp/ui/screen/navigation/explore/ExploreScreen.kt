@@ -29,6 +29,7 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Landscape
 import androidx.compose.material.icons.filled.Terrain
 import androidx.compose.material.icons.filled.Height
@@ -49,9 +50,6 @@ fun ExploreScreen(
     val context = LocalContext.current
     val state = viewModel.state
     val cameraPositionState = rememberCameraPositionState()
-    val bottomSheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false
-    )
     val locationPermissionState = rememberPermissionState(
         Manifest.permission.ACCESS_FINE_LOCATION
     )
@@ -78,18 +76,12 @@ fun ExploreScreen(
         }
     }
 
-    // Handle bottom sheet dismissal
-    LaunchedEffect(bottomSheetState.currentValue) {
-        if (bottomSheetState.currentValue == SheetValue.Hidden) {
-            viewModel.onEvent(ExploreEvent.ToggleBottomSheet)
-        }
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(innerPadding)
+            .padding(top = innerPadding.calculateTopPadding())
     ) {
+        // Map Layer
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
@@ -139,49 +131,6 @@ fun ExploreScreen(
             }
         }
 
-        // Area details card at the bottom
-        if (state.polygonPoints.isNotEmpty()) {
-            Card(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "Selected Area",
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Area Size: ${String.format("%.2f", state.areaSize)} hectares")
-                    
-                    if (state.isAreaFinalized) {
-                        if (state.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-                        } else {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("Soil Type: ${state.soilType}")
-                            Text("Altitude: ${state.altitude}")
-                            Text("Climate Zone: ${state.climateZone}")
-                            
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(
-                                onClick = { viewModel.onEvent(ExploreEvent.ShowSaveDialog) },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Save Area")
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         // Floating action buttons
         Column(
             modifier = Modifier
@@ -225,68 +174,94 @@ fun ExploreScreen(
             }
         }
 
-        // Only show bottom sheet if area is finalized and showBottomSheet is true
-        if (state.isAreaFinalized && state.showBottomSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { 
-                    viewModel.onEvent(ExploreEvent.ToggleBottomSheet)
-                },
-                sheetState = bottomSheetState,
-                containerColor = MaterialTheme.colorScheme.surface,
+        // Permanent Bottom Sheet
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .height(IntrinsicSize.Min),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 8.dp,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = innerPadding.calculateBottomPadding())
             ) {
-                Column(
+                // Drag Handle
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 16.dp)
-                        .padding(bottom = 32.dp)
+                        .padding(bottom = 8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Area Details",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Surface(
+                        modifier = Modifier
+                            .width(32.dp)
+                            .height(4.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                        shape = RoundedCornerShape(2.dp)
+                    ) {}
+                }
+                
+                Text(
+                    text = "Selected Area",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(12.dp))
 
-                    if (state.isLoading) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
-                    } else {
-                        DetailItem(
-                            icon = Icons.Default.Landscape,
-                            label = "Area Size",
-                            value = "${String.format("%.2f", state.areaSize)} hectares"
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MetricCard(
+                        modifier = Modifier.weight(1f),
+                        label = "Area Size",
+                        value = if (state.polygonPoints.isNotEmpty()) 
+                               "${String.format("%.2f", state.areaSize)} m²" 
+                               else "--",
+                        icon = Icons.Default.Landscape
+                    )
+                    MetricCard(
+                        modifier = Modifier.weight(1f),
+                        label = "Soil Type",
+                        value = if (state.isAreaFinalized) state.soilType else "--",
+                        icon = Icons.Default.Terrain
+                    )
+                    MetricCard(
+                        modifier = Modifier.weight(1f),
+                        label = "Altitude",
+                        value = if (state.isAreaFinalized) state.altitude else "--",
+                        icon = Icons.Default.Height
+                    )
+                }
+
+                if (state.isAreaFinalized && state.isLoading) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+
+                if (state.isAreaFinalized && !state.isLoading) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = { viewModel.onEvent(ExploreEvent.ShowSaveDialog) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        DetailItem(
-                            icon = Icons.Default.Terrain,
-                            label = "Soil Type",
-                            value = state.soilType
+                    ) {
+                        Text(
+                            "Select Area",
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            style = MaterialTheme.typography.labelLarge
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        DetailItem(
-                            icon = Icons.Default.Height,
-                            label = "Altitude",
-                            value = state.altitude
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        DetailItem(
-                            icon = Icons.Default.WbSunny,
-                            label = "Climate Zone",
-                            value = state.climateZone
-                        )
-                        
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Button(
-                            onClick = { viewModel.onEvent(ExploreEvent.ShowSaveDialog) },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Save Area")
-                        }
-                        Spacer(modifier = Modifier.height(32.dp))
                     }
                 }
             }
@@ -332,35 +307,39 @@ fun ExploreScreen(
 }
 
 @Composable
-private fun DetailItem(
-    icon: ImageVector,
+private fun MetricCard(
+    modifier: Modifier = Modifier,
     label: String,
-    value: String
+    value: String,
+    icon: ImageVector
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column {
+        Column(
+            modifier = Modifier
+                .padding(8.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = value,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
 }
-
-
