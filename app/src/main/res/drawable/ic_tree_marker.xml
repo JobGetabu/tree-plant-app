@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Tree canopy - multiple layers for depth -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M12,2c-5,3 -8,7 -8,10c0,4 3.6,7 8,7s8,-3 8,-7C20,9 17,5 12,2z"/>
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M12,3c-4.5,2.5 -7,6 -7,9c0,3.5 3.1,6 7,6s7,-2.5 7,-6C19,9 16.5,5.5 12,3z"/>
+    <path
+        android:fillColor="#66BB6A"
+        android:pathData="M12,4c-4,2 -6,5 -6,8c0,3 2.7,5 6,5s6,-2 6,-5C18,9 16,6 12,4z"/>
+
+    <!-- Tree trunk -->
+    <path
+        android:fillColor="#6D4C41"
+        android:pathData="M11,12h2v8h2v2h-6v-2h2v-8z"/>
+
+    <!-- Trunk texture/details -->
+    <path
+        android:fillColor="#5D4037"
+        android:pathData="M11.5,14h1v6h-1zM12.5,15h1v4h-1z"/>
+</vector>

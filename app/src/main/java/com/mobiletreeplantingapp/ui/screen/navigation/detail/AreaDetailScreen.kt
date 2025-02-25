@@ -48,9 +48,11 @@ import androidx.navigation.NavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
+import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.Polygon
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.mobiletreeplantingapp.data.model.SavedArea
@@ -62,6 +64,22 @@ import com.mobiletreeplantingapp.ui.screen.navigation.detail.components.EditTree
 import com.mobiletreeplantingapp.ui.screen.navigation.detail.components.SavedTreeCard
 import com.mobiletreeplantingapp.ui.screen.navigation.detail.components.TopographyAndSoilCard
 import java.util.*
+import kotlin.random.Random
+import androidx.compose.material.icons.filled.Park
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import androidx.core.content.ContextCompat
+import androidx.compose.ui.platform.LocalContext
+import com.google.maps.android.compose.rememberMarkerState
+import com.mobiletreeplantingapp.R
+import android.content.Context
+import com.google.android.gms.maps.model.BitmapDescriptor
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -212,7 +230,8 @@ fun AreaDetailScreen(
                         item {
                             AreaMap(
                                 area = area,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                viewModel = viewModel // Pass ViewModel to AreaMap
                             )
                         }
 
@@ -400,12 +419,17 @@ fun AreaDetailScreen(
 @Composable
 private fun AreaMap(
     area: SavedArea,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: AreaDetailViewModel = hiltViewModel() // Add ViewModel parameter
 ) {
-    // Convert GeoPoints to LatLng for the map
+    val state = viewModel.state // Get state from ViewModel
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var isMapReady by remember { mutableStateOf(false) }
+    var treeIcon by remember { mutableStateOf<BitmapDescriptor?>(null) }
+    
     val polygonPoints = area.points.map { LatLng(it.latitude, it.longitude) }
-
-    // Calculate center point of the area
+    
     val center = if (polygonPoints.isNotEmpty()) {
         val latSum = polygonPoints.sumOf { it.latitude }
         val lngSum = polygonPoints.sumOf { it.longitude }
@@ -418,32 +442,139 @@ private fun AreaMap(
         position = CameraPosition.fromLatLngZoom(center, 7f)
     }
 
-    // Zoom to area when map is ready with smoother animation
-    LaunchedEffect(center) {
-        cameraPositionState.animate(
-            update = CameraUpdateFactory.newLatLngZoom(center, 10f),
-            durationMs = 3000  // Increased duration to 2 seconds
-        )
+    // Generate random points within the polygon based on the number of trees
+    val treeMarkers = remember(state.savedTrees.size) {
+        generateRandomPoints(polygonPoints, state.savedTrees.size)
     }
 
     Card(
         modifier = modifier.height(200.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState,
-            properties = MapProperties(
-                mapType = MapType.HYBRID
-            )
-        ) {
-            Polygon(
-                points = polygonPoints,
-                fillColor = Color(0x4DFFD700),  // Semi-transparent golden yellow
-                strokeColor = Color(0xFFFFD700), // Solid golden yellow
-                strokeWidth = 2f
-            )
+        Box {
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                properties = MapProperties(mapType = MapType.HYBRID),
+                onMapLoaded = {
+                    scope.launch {
+                        // Initialize tree icon after map is loaded
+                        treeIcon = bitmapDescriptorFromVector(context, R.drawable.ic_tree_marker)
+                        isMapReady = true
+                    }
+                }
+            ) {
+                // Draw area polygon
+                Polygon(
+                    points = polygonPoints,
+                    fillColor = Color(0x4DFFD700),
+                    strokeColor = Color(0xFFFFD700),
+                    strokeWidth = 2f
+                )
+
+                // Only show markers when map and icon are ready
+                if (isMapReady && treeIcon != null) {
+                    treeMarkers.forEach { treePosition ->
+                        Marker(
+                            state = rememberMarkerState(position = treePosition),
+                            icon = treeIcon,
+                            title = "Tree"
+                        )
+                    }
+                }
+            }
+
+            // Show tree count overlay
+            Box(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                        shape = MaterialTheme.shapes.small
+                    )
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = "Trees: ${state.savedTrees.size}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
+    }
+}
+
+private fun generateRandomPoints(polygonPoints: List<LatLng>, count: Int): List<LatLng> {
+    if (count == 0 || polygonPoints.size < 3) return emptyList()
+
+    val bounds = getBoundingBox(polygonPoints)
+    val points = mutableListOf<LatLng>()
+    
+    while (points.size < count) {
+        val lat = Random.nextDouble(bounds.first.latitude, bounds.second.latitude)
+        val lng = Random.nextDouble(bounds.first.longitude, bounds.second.longitude)
+        val point = LatLng(lat, lng)
+        
+        if (isPointInPolygon(point, polygonPoints)) {
+            points.add(point)
+        }
+    }
+    
+    return points
+}
+
+private fun getBoundingBox(points: List<LatLng>): Pair<LatLng, LatLng> {
+    var minLat = Double.POSITIVE_INFINITY
+    var maxLat = Double.NEGATIVE_INFINITY
+    var minLng = Double.POSITIVE_INFINITY
+    var maxLng = Double.NEGATIVE_INFINITY
+
+    points.forEach { point ->
+        minLat = minOf(minLat, point.latitude)
+        maxLat = maxOf(maxLat, point.latitude)
+        minLng = minOf(minLng, point.longitude)
+        maxLng = maxOf(maxLng, point.longitude)
+    }
+
+    return Pair(
+        LatLng(minLat, minLng), // Southwest corner
+        LatLng(maxLat, maxLng)  // Northeast corner
+    )
+}
+
+private fun isPointInPolygon(point: LatLng, polygon: List<LatLng>): Boolean {
+    var inside = false
+    var j = polygon.size - 1
+    
+    for (i in polygon.indices) {
+        if ((polygon[i].longitude > point.longitude) != (polygon[j].longitude > point.longitude) &&
+            point.latitude < (polygon[j].latitude - polygon[i].latitude) * 
+            (point.longitude - polygon[i].longitude) / 
+            (polygon[j].longitude - polygon[i].longitude) + polygon[i].latitude
+        ) {
+            inside = !inside
+        }
+        j = i
+    }
+    
+    return inside
+}
+
+private fun bitmapDescriptorFromVector(context: Context, vectorResId: Int): BitmapDescriptor? {
+    return try {
+        val drawable = ContextCompat.getDrawable(context, vectorResId) ?: return null
+        drawable.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
+        val bm = Bitmap.createBitmap(
+            drawable.intrinsicWidth,
+            drawable.intrinsicHeight,
+            Bitmap.Config.ARGB_8888
+        )
+
+        val canvas = Canvas(bm)
+        drawable.draw(canvas)
+        BitmapDescriptorFactory.fromBitmap(bm)
+    } catch (e: Exception) {
+        null
     }
 }
 

@@ -581,28 +581,107 @@ class FirestoreRepositoryImpl @Inject constructor(
         elevation: Double,
         climateZone: String
     ): Flow<Result<List<TreeRecommendationData>>> = callbackFlow {
-        val query = firestore.collection("tree_recommendations")
-            .whereArrayContains("suitableSoilTypes", soilType.lowercase())
-            .whereLessThanOrEqualTo("maxElevation", elevation)
-            .orderBy("maxElevation")
+        try {
+            Log.d(TAG, "Fetching recommendations for: soil=$soilType, elevation=$elevation, climate=$climateZone")
+            
+            // Create collection reference
+            val recommendationsRef = firestore.collection("tree_recommendations")
+            
+            // Use a simpler query with just one range filter
+            val query = recommendationsRef
+                .whereLessThanOrEqualTo("maxElevation", elevation + 200)
+            
+            val listener = query.addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "Error fetching recommendations", error)
+                    trySend(Result.failure(error))
+                    return@addSnapshotListener
+                }
 
-        val listener = query.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                trySend(Result.failure(error))
-                return@addSnapshotListener
+                try {
+                    val recommendations = snapshot?.documents?.mapNotNull { doc ->
+                        doc.toObject(TreeRecommendationData::class.java)
+                    }?.filter { recommendation ->
+                        // Do additional filtering in memory
+                        val elevationMatch = recommendation.minElevation <= (elevation + 200)
+                        
+                        val soilMatch = recommendation.suitableSoilTypes.any { soil ->
+                            soil.contains(soilType.lowercase()) || soilType.lowercase().contains(soil)
+                        }
+                        
+                        val climateMatch = recommendation.suitableClimateZones.any { climate ->
+                            climate.contains(climateZone.lowercase()) || 
+                            climateZone.lowercase().contains(climate) ||
+                            areClimatesCompatible(climate, climateZone)
+                        }
+                        
+                        elevationMatch && soilMatch && climateMatch
+                    }?.sortedWith(
+                        compareByDescending<TreeRecommendationData> { tree ->
+                            calculateRelevanceScore(
+                                tree,
+                                elevation,
+                                soilType,
+                                climateZone
+                            )
+                        }.thenByDescending { it.suitabilityScore }
+                    ) ?: emptyList()
+
+                    Log.d(TAG, "Found ${recommendations.size} matching trees")
+                    trySend(Result.success(recommendations))
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error processing recommendations", e)
+                    trySend(Result.failure(e))
+                }
             }
 
-            val recommendations = snapshot?.documents?.mapNotNull { doc ->
-                doc.toObject(TreeRecommendationData::class.java)
-            }?.filter { recommendation ->
-                recommendation.minElevation <= elevation &&
-                recommendation.suitableClimateZones.contains(climateZone.lowercase())
-            }?.sortedByDescending { it.suitabilityScore } ?: emptyList()
+            awaitClose { listener.remove() }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting up recommendations query", e)
+            trySend(Result.failure(e))
+            close(e)
+        }
+    }
 
-            trySend(Result.success(recommendations))
+    private fun calculateRelevanceScore(
+        tree: TreeRecommendationData,
+        elevation: Double,
+        soilType: String,
+        climateZone: String
+    ): Double {
+        var score = tree.suitabilityScore.toDouble()
+
+        // Elevation match factor (closer to target elevation = higher score)
+        val elevationMidpoint = (tree.maxElevation + tree.minElevation) / 2
+        val elevationDifference = kotlin.math.abs(elevation - elevationMidpoint)
+        val elevationFactor = 1.0 - (elevationDifference / 1000.0).coerceAtMost(1.0)
+        score *= elevationFactor
+
+        // Soil type match factor
+        if (tree.suitableSoilTypes.any { it == soilType.lowercase() }) {
+            score *= 1.2 // Direct soil match bonus
         }
 
-        awaitClose { listener.remove() }
+        // Climate zone match factor
+        if (tree.suitableClimateZones.any { it == climateZone.lowercase() }) {
+            score *= 1.2 // Direct climate match bonus
+        }
+
+        return score
+    }
+
+    private fun areClimatesCompatible(climate1: String, climate2: String): Boolean {
+        // Define climate zone compatibility groups
+        val compatibilityGroups = listOf(
+            setOf("tropical", "subtropical", "tropical highland"),
+            setOf("arid", "semi-arid", "savanna"),
+            setOf("highland", "temperate", "subtropical highland"),
+            setOf("coastal", "tropical", "subtropical")
+        )
+
+        return compatibilityGroups.any { group ->
+            group.contains(climate1.lowercase()) && group.contains(climate2.lowercase())
+        }
     }
 
     override suspend fun getTreeById(treeId: String): Result<SavedTree?> = try {

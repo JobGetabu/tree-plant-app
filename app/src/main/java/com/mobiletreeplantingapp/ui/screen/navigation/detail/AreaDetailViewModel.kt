@@ -18,6 +18,7 @@ import com.mobiletreeplantingapp.data.repository.FirestoreRepository
 import com.mobiletreeplantingapp.navigation.Screen
 import com.mobiletreeplantingapp.ui.screen.navigation.detail.components.TreeData
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -79,7 +80,7 @@ class AreaDetailViewModel @Inject constructor(
 
     fun loadTreeRecommendations(area: SavedArea) {
         viewModelScope.launch {
-            state = state.copy(isLoadingRecommendations = true)
+            state = state.copy(isLoadingRecommendations = true, error = null)
 
             try {
                 val centroid = area.points.let { points ->
@@ -89,62 +90,127 @@ class AreaDetailViewModel @Inject constructor(
                 }
 
                 Log.d("AreaDetailViewModel", "Fetching soil data for: $centroid")
-                val soilResponse = soilApiService.getSoilData(
-                    latitude = centroid.latitude,
-                    longitude = centroid.longitude
-                )
-
-                if (soilResponse.isSuccessful && soilResponse.body() != null) {
-                    val soilData = soilResponse.body()!!
-                    Log.d("AreaDetailViewModel", "Received soil data: $soilData")
-
-                    // Create soil analysis from API data
-                    val soilAnalysis = createSoilAnalysis(soilData)
-                    Log.d("AreaDetailViewModel", "Created soil analysis: $soilAnalysis")
-
-                    // Update area with new soil analysis
-                    val updatedArea = area.copy(soilAnalysis = soilAnalysis)
-
-                    // Update state with the new area containing soil analysis
-                    state = state.copy(
-                        area = updatedArea,
-                        soilData = soilData
-                    )
-                    Log.d("AreaDetailViewModel", "Updated state with new area: ${state.area?.soilAnalysis}")
-
-                    // Get recommendations from Firestore
-                    firestoreRepository.getTreeRecommendations(
-                        soilType = determineSoilType(soilData),
-                        elevation = area.elevation,
-                        climateZone = area.climateZone
-                    ).collect { result ->
-                        result.onSuccess { recommendations ->
-                            state = state.copy(
-                                treeRecommendations = recommendations.map { data ->
-                                    TreeRecommendation(
-                                        id = data.id,
-                                        species = data.species,
-                                        suitabilityScore = data.suitabilityScore,
-                                        description = data.description,
-                                        growthRate = data.growthRate,
-                                        maintainanceLevel = data.maintainanceLevel,
-                                        soilPreference = data.soilPreference,
-                                        climatePreference = data.climatePreference
-                                    )
-                                },
-                                isLoadingRecommendations = false,
-                                error = null
-                            )
-                        }.onFailure { error ->
-                            handleRecommendationError(error, updatedArea)
+                
+                // Retry mechanism for soil API
+                var soilData: SoilData? = null
+                var retryCount = 0
+                val maxRetries = 3
+                
+                while (soilData == null && retryCount < maxRetries) {
+                    try {
+                        val response = soilApiService.getSoilData(
+                            latitude = centroid.latitude,
+                            longitude = centroid.longitude
+                        )
+                        if (response.isSuccessful && response.body() != null) {
+                            soilData = response.body()
+                            Log.d("AreaDetailViewModel", "Received soil data: $soilData")
                         }
+                    } catch (e: Exception) {
+                        Log.e("AreaDetailViewModel", "Soil API attempt ${retryCount + 1} failed", e)
+                        delay(1000L * (retryCount + 1)) // Exponential backoff
                     }
+                    retryCount++
+                }
+
+                if (soilData == null) {
+                    // Fallback to area's existing soil type if API fails
+                    Log.d("AreaDetailViewModel", "Using fallback soil type: ${area.soilType}")
+                    getRecommendationsWithSoilType(area.soilType, area)
                 } else {
-                    throw Exception("Failed to fetch soil data: ${soilResponse.errorBody()?.string()}")
+                    val soilAnalysis = createSoilAnalysis(soilData)
+                    val soilType = determineSoilType(soilData)
+                    Log.d("AreaDetailViewModel", "Determined soil type: $soilType")
+                    
+                    val updatedArea = area.copy(soilAnalysis = soilAnalysis)
+                    state = state.copy(area = updatedArea, soilData = soilData)
+                    
+                    getRecommendationsWithSoilType(soilType, updatedArea)
                 }
             } catch (e: Exception) {
                 Log.e("AreaDetailViewModel", "Error loading recommendations", e)
                 handleRecommendationError(e, area)
+            }
+        }
+    }
+
+    private suspend fun getRecommendationsWithSoilType(soilType: String, area: SavedArea) {
+        firestoreRepository.getTreeRecommendations(
+            soilType = soilType,
+            elevation = area.elevation,
+            climateZone = area.climateZone
+        ).catch { e ->
+            Log.e("AreaDetailViewModel", "Error getting recommendations", e)
+            handleRecommendationError(e, area)
+        }.collect { result ->
+            result.onSuccess { recommendations ->
+                if (recommendations.isEmpty()) {
+                    // If no exact matches, try with more relaxed criteria
+                    Log.d("AreaDetailViewModel", "No recommendations found, trying relaxed criteria")
+                    getRelaxedRecommendations(area)
+                } else {
+                    state = state.copy(
+                        treeRecommendations = recommendations.map { data ->
+                            TreeRecommendation(
+                                id = data.id,
+                                species = data.species,
+                                suitabilityScore = data.suitabilityScore,
+                                description = data.description,
+                                growthRate = data.growthRate,
+                                maintainanceLevel = data.maintainanceLevel,
+                                soilPreference = data.soilPreference,
+                                climatePreference = data.climatePreference
+                            )
+                        },
+                        isLoadingRecommendations = false,
+                        error = null
+                    )
+                }
+            }.onFailure { error ->
+                handleRecommendationError(error, area)
+            }
+        }
+    }
+
+    private suspend fun getRelaxedRecommendations(area: SavedArea) {
+        // Try with more general soil type and climate zone
+        val generalizedSoilType = when {
+            area.soilType.contains("sandy") -> "sandy"
+            area.soilType.contains("clay") -> "clay"
+            else -> "loamy"
+        }
+        
+        val generalizedClimateZone = when {
+            area.climateZone.contains("tropical") -> "tropical"
+            area.climateZone.contains("arid") -> "semi-arid"
+            area.climateZone.contains("highland") -> "highland"
+            else -> area.climateZone
+        }
+
+        firestoreRepository.getTreeRecommendations(
+            soilType = generalizedSoilType,
+            elevation = area.elevation,
+            climateZone = generalizedClimateZone
+        ).collect { result ->
+            result.onSuccess { recommendations ->
+                state = state.copy(
+                    treeRecommendations = recommendations.map { data ->
+                        TreeRecommendation(
+                            id = data.id,
+                            species = data.species,
+                            suitabilityScore = data.suitabilityScore * 0.9f, // Slightly lower confidence
+                            description = data.description,
+                            growthRate = data.growthRate,
+                            maintainanceLevel = data.maintainanceLevel,
+                            soilPreference = data.soilPreference,
+                            climatePreference = data.climatePreference
+                        )
+                    },
+                    isLoadingRecommendations = false,
+                    error = null
+                )
+            }.onFailure { error ->
+                handleRecommendationError(error, area)
             }
         }
     }
