@@ -2,6 +2,7 @@ package com.mobiletreeplantingapp.data.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FieldValue
 import com.mobiletreeplantingapp.data.model.SavedArea
 import com.mobiletreeplantingapp.data.model.TreeProgress
 import com.mobiletreeplantingapp.data.model.GuideStep
@@ -16,7 +17,6 @@ import android.util.Log
 import com.google.firebase.auth.userProfileChangeRequest
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.mobiletreeplantingapp.data.model.SavedTree
 import com.google.firebase.firestore.DocumentSnapshot
@@ -24,6 +24,9 @@ import com.google.firebase.firestore.SetOptions
 import com.mobiletreeplantingapp.data.model.UserStats
 import com.mobiletreeplantingapp.data.model.TreeRecommendationData
 import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsViewModel
+import kotlinx.coroutines.withContext
+import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.firestore.GeoPoint
 
 @Singleton
 class FirestoreRepositoryImpl @Inject constructor(
@@ -38,10 +41,10 @@ class FirestoreRepositoryImpl @Inject constructor(
     override suspend fun saveArea(area: SavedArea): Result<Unit> = try {
         Log.d("FirestoreRepo", "Starting to save area: ${area.name}")
         val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
-        
+
         // Create a batch to perform multiple operations atomically
         val batch = firestore.batch()
-        
+
         // Add area document
         val areaRef = areasCollection.document()
         batch.set(
@@ -68,7 +71,7 @@ class FirestoreRepositoryImpl @Inject constructor(
 
         // Commit the batch
         batch.commit().await()
-        
+
         Result.success(Unit)
     } catch (e: Exception) {
         Log.e("FirestoreRepo", "Exception while saving area", e)
@@ -181,10 +184,10 @@ class FirestoreRepositoryImpl @Inject constructor(
 
     override suspend fun saveTree(tree: SavedTree): Result<Unit> = try {
         val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
-        
+
         // Create a batch to perform multiple operations atomically
         val batch = firestore.batch()
-        
+
         // Add tree document
         val treeRef = treesCollection.document(tree.id)
         batch.set(
@@ -196,22 +199,35 @@ class FirestoreRepositoryImpl @Inject constructor(
                 )
             )
         )
-        
-        // Update user stats
+
+        // Update user stats with atomic operations
         val userRef = firestore.collection("users").document(userId)
-        batch.set(
-            userRef,
-            mapOf(
-                "treesPlanted" to FieldValue.increment(1),
-                "co2Offset" to FieldValue.increment(20), // Assuming average CO2 offset per tree
-                "lastPlantingDate" to FieldValue.serverTimestamp()
-            ),
-            SetOptions.merge()
+        val statsUpdate = mutableMapOf<String, Any>(
+            "treesPlanted" to FieldValue.increment(1),
+            "co2Offset" to FieldValue.increment(20), // 20kg CO2 per tree
+            "lastPlantingDate" to FieldValue.serverTimestamp()
         )
-        
-        // Commit the batch
+
+        // Get the area size and update total area if needed
+        val areaDoc = areasCollection.document(tree.areaId).get().await()
+        val area = areaDoc.toObject(SavedArea::class.java)
+        area?.let {
+            // Only update area stats if it's the first tree in this area
+            val existingTrees = treesCollection
+                .whereEqualTo("areaId", tree.areaId)
+                .get()
+                .await()
+            if (existingTrees.isEmpty) {
+                statsUpdate["totalArea"] = FieldValue.increment(it.areaSize)
+            }
+        }
+
+        batch.set(userRef, statsUpdate, SetOptions.merge())
+
+        // Commit all operations
         batch.commit().await()
-        
+        Log.d(TAG, "Successfully saved tree and updated user stats")
+
         Result.success(Unit)
     } catch (e: Exception) {
         Log.e("FirestoreRepository", "Error saving tree", e)
@@ -220,14 +236,29 @@ class FirestoreRepositoryImpl @Inject constructor(
 
     override suspend fun deleteTree(treeId: String): Result<Unit> = try {
         val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
-        
-        // First verify the tree belongs to the user
+
+        // First verify the tree belongs to the user and get tree data
         val treeDoc = treesCollection.document(treeId).get().await()
         if (treeDoc.getString("userId") != userId) {
             throw Exception("Unauthorized to delete this tree")
         }
-        
-        treesCollection.document(treeId).delete().await()
+
+        // Create batch operation
+        val batch = firestore.batch()
+
+        // Delete the tree
+        batch.delete(treesCollection.document(treeId))
+
+        // Update user stats (decrement counters)
+        val userRef = firestore.collection("users").document(userId)
+        batch.update(userRef, mapOf(
+            "treesPlanted" to FieldValue.increment(-1),
+            "co2Offset" to FieldValue.increment(-20) // Assuming 20kg CO2 per tree
+        ))
+
+        // Commit the batch
+        batch.commit().await()
+
         Result.success(Unit)
     } catch (e: Exception) {
         Log.e("FirestoreRepository", "Error deleting tree", e)
@@ -236,18 +267,18 @@ class FirestoreRepositoryImpl @Inject constructor(
 
     override suspend fun updateTree(tree: SavedTree): Result<Unit> = try {
         val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
-        
+
         // First verify the tree belongs to the user
         val treeDoc = treesCollection.document(tree.id).get().await()
         if (treeDoc.getString("userId") != userId) {
             throw Exception("Unauthorized to update this tree")
         }
-        
+
         treesCollection
             .document(tree.id)
             .update(tree.toMap().plus("updatedAt" to FieldValue.serverTimestamp()))
             .await()
-            
+
         Result.success(Unit)
     } catch (e: Exception) {
         Log.e("FirestoreRepository", "Error updating tree", e)
@@ -257,7 +288,7 @@ class FirestoreRepositoryImpl @Inject constructor(
     override fun getAreaTrees(areaId: String): Flow<Result<List<SavedTree>>> = callbackFlow {
         try {
             val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
-            
+
             val listener = treesCollection
                 .whereEqualTo("userId", userId)
                 .whereEqualTo("areaId", areaId)
@@ -295,9 +326,9 @@ class FirestoreRepositoryImpl @Inject constructor(
 
     override suspend fun saveTreeProgress(progress: TreeProgress): Result<Unit> = try {
         val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
-        
+
         Log.d(TAG, "Saving tree progress for treeId: ${progress.treeId}")
-        
+
         treeProgressCollection
             .document(progress.treeId)
             .set(
@@ -310,7 +341,7 @@ class FirestoreRepositoryImpl @Inject constructor(
                 )
             )
             .await()
-            
+
         Result.success(Unit)
     } catch (e: Exception) {
         Log.e(TAG, "Error saving tree progress", e)
@@ -319,17 +350,17 @@ class FirestoreRepositoryImpl @Inject constructor(
 
     override suspend fun updateTreeProgress(progress: TreeProgress): Result<Unit> = try {
         val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
-        
+
         Log.d(TAG, "Updating tree progress for user: $userId, tree: ${progress.treeId}")
-        
+
         val docRef = firestore.collection("users")
             .document(userId)
             .collection("tree_progress")
             .document(progress.treeId)
-        
+
         // Always set the full document to ensure all fields are updated
         docRef.set(progress).await()
-        
+
         Log.d(TAG, "Successfully updated tree progress")
         Result.success(Unit)
     } catch (e: Exception) {
@@ -339,9 +370,9 @@ class FirestoreRepositoryImpl @Inject constructor(
 
     override suspend fun getTreeProgress(treeId: String): Flow<Result<TreeProgress?>> = callbackFlow {
         val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
-        
+
         Log.d(TAG, "Getting tree progress for user: $userId, tree: $treeId")
-        
+
         val listener = firestore.collection("users")
             .document(userId)
             .collection("tree_progress")
@@ -368,15 +399,97 @@ class FirestoreRepositoryImpl @Inject constructor(
                 }
             }
 
-        awaitClose { 
+        awaitClose {
             Log.d(TAG, "Removing tree progress listener")
-            listener.remove() 
+            listener.remove()
         }
     }
 
-    override fun getUserStats(): Flow<Result<UserStats>> = callbackFlow {
+    override suspend fun deleteArea(areaId: String): Result<Unit> = try {
         val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not logged in")
+        Log.d(TAG, "Starting area deletion process for areaId: $areaId")
+
+        // Get the area details first
+        val areaDoc = areasCollection.document(areaId).get().await()
+        val area = areaDoc.toObject(SavedArea::class.java)
+            ?: throw IllegalStateException("Area not found")
+
+        // Get all trees in this area
+        val treesSnapshot = treesCollection
+            .whereEqualTo("areaId", areaId)
+            .get()
+            .await()
+
+        val treesCount = treesSnapshot.size()
+        Log.d(TAG, "Found $treesCount trees to delete")
+
+        // Create a batch operation
+        val batch = firestore.batch()
+
+        // Delete all trees
+        treesSnapshot.documents.forEach { treeDoc ->
+            batch.delete(treeDoc.reference)
+        }
+
+        // Delete the area
+        batch.delete(areasCollection.document(areaId))
+
+        // Update user stats
+        val userRef = firestore.collection("users").document(userId)
+        batch.update(userRef, mapOf(
+            "treesPlanted" to FieldValue.increment(-treesCount.toLong()),
+            "totalArea" to FieldValue.increment(-area.areaSize),
+            "co2Offset" to FieldValue.increment(-(treesCount * 20).toLong()) // Assuming 20kg CO2 per tree
+        ))
+
+        // Commit all operations
+        batch.commit().await()
+        Log.d(TAG, "Successfully deleted area and updated stats")
+
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Log.e(TAG, "Error deleting area", e)
+        Result.failure(e)
+    }
+
+    override suspend fun deleteTreesByAreaId(areaId: String): Result<Unit> = try {
+        val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
+
+        // Get all trees in the area
+        val treesSnapshot = treesCollection
+            .whereEqualTo("areaId", areaId)
+            .get()
+            .await()
+
+        val treesCount = treesSnapshot.size()
         
+        // Create batch operation
+        val batch = firestore.batch()
+
+        // Delete all trees
+        treesSnapshot.documents.forEach { document ->
+            batch.delete(document.reference)
+        }
+
+        // Update user stats
+        val userRef = firestore.collection("users").document(userId)
+        batch.update(userRef, mapOf(
+            "treesPlanted" to FieldValue.increment(-treesCount.toLong()),
+            "co2Offset" to FieldValue.increment(-(treesCount * 20).toLong())
+        ))
+
+        // Commit batch
+        batch.commit().await()
+        
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Log.e(TAG, "Error deleting trees by area ID", e)
+        Result.failure(e)
+    }
+
+    override suspend fun getUserStats(): Flow<Result<UserStats>> = callbackFlow {
+        val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not logged in")
+
         // Initialize user stats document if it doesn't exist
         try {
             val userDoc = firestore.collection("users").document(userId).get().await()
@@ -394,7 +507,7 @@ class FirestoreRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.e("FirestoreRepository", "Error initializing user stats", e)
         }
-        
+
         val listener = firestore.collection("users")
             .document(userId)
             .addSnapshotListener { snapshot, error ->
@@ -414,11 +527,26 @@ class FirestoreRepositoryImpl @Inject constructor(
                     totalArea = snapshot.getDouble("totalArea") ?: 0.0,
                     lastPlantingDate = snapshot.getTimestamp("lastPlantingDate")?.toDate()?.time
                 )
-                
+
                 trySend(Result.success(stats))
             }
 
         awaitClose { listener.remove() }
+    }
+
+    private fun calculateAreaSize(points: List<LatLng>): Double {
+        if (points.size < 3) return 0.0
+
+        var area = 0.0
+        val n = points.size
+        for (i in 0 until n) {
+            val j = (i + 1) % n
+            area += points[i].latitude * points[j].longitude
+            area -= points[j].latitude * points[i].longitude
+        }
+        area = kotlin.math.abs(area) / 2.0
+        // Convert to hectares (approximate)
+        return area * 111.32 * 111.32 * kotlin.math.cos(points[0].latitude * kotlin.math.PI / 180)
     }
 
     private fun DocumentSnapshot.toTreeProgress(): TreeProgress {
@@ -480,7 +608,7 @@ class FirestoreRepositoryImpl @Inject constructor(
     override suspend fun getTreeById(treeId: String): Result<SavedTree?> = try {
         Log.d(TAG, "Getting tree by ID: $treeId")
         val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
-        
+
         val treeDoc = treesCollection
             .document(treeId)
             .get()
@@ -501,14 +629,14 @@ class FirestoreRepositoryImpl @Inject constructor(
 
     override suspend fun updateUserProfile(displayName: String): Result<Unit> = try {
         val user = auth.currentUser ?: throw Exception("User not authenticated")
-        
+
         // Update Firebase Auth display name
         user.updateProfile(
             userProfileChangeRequest {
                 setDisplayName(displayName)
             }
         ).await()
-        
+
         // Update Firestore user document
         firestore.collection("users")
             .document(user.uid)
@@ -517,7 +645,7 @@ class FirestoreRepositoryImpl @Inject constructor(
                 SetOptions.merge()
             )
             .await()
-            
+
         Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
@@ -525,7 +653,7 @@ class FirestoreRepositoryImpl @Inject constructor(
 
     override fun getUserProfile(): Flow<Result<SettingsViewModel.UserProfile>> = callbackFlow {
         val user = auth.currentUser ?: throw Exception("User not authenticated")
-        
+
         val listener = firestore.collection("users")
             .document(user.uid)
             .addSnapshotListener { snapshot, error ->
@@ -539,7 +667,7 @@ class FirestoreRepositoryImpl @Inject constructor(
                     email = user.email ?: "",
                     photoUrl = user.photoUrl?.toString()
                 )
-                
+
                 trySend(Result.success(profile))
             }
 

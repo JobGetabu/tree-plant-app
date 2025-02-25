@@ -1,5 +1,6 @@
 package com.mobiletreeplantingapp.ui.screen.navigation.detail
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,7 +31,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -82,7 +89,7 @@ fun AreaDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
                         text = "${state.area?.name ?: ""} Details",
                         style = MaterialTheme.typography.titleLarge
@@ -91,6 +98,17 @@ fun AreaDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { viewModel.state = viewModel.state.copy(showDeleteDialog = true) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Area",
+                            tint = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             )
@@ -102,15 +120,85 @@ fun AreaDetailScreen(
                 .padding(padding)
         ) {
             if (state.error != null) {
-                Text(
-                    text = state.error!!,
-                    color = MaterialTheme.colorScheme.error,
+                Column(
                     modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(16.dp)
-                )
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "An error occurred while loading the data.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Please try again later.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = { viewModel.retryLoading(areaId) }
+                    ) {
+                        Text("Retry")
+                    }
+                }
             } else {
                 state.area?.let { area ->
+                    // Show delete confirmation dialog
+                    if (state.showDeleteDialog) {
+                        AlertDialog(
+                            onDismissRequest = {
+                                viewModel.state = viewModel.state.copy(showDeleteDialog = false)
+                            },
+                            title = {
+                                Text("Delete Area")
+                            },
+                            text = {
+                                Text("Are you sure you want to delete '${area.name}'? This will also delete all trees planted in this area. This action cannot be undone.")
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        viewModel.deleteArea(area.id)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.error
+                                    )
+                                ) {
+                                    Text("Delete")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(
+                                    onClick = {
+                                        viewModel.state = viewModel.state.copy(showDeleteDialog = false)
+                                    }
+                                ) {
+                                    Text("Cancel")
+                                }
+                            }
+                        )
+                    }
+
+                    // Show loading indicator while deleting
+                    if (state.isDeleting) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.5f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
                     LaunchedEffect(area) {
                         viewModel.loadTreeRecommendations(area)
                     }
@@ -239,7 +327,7 @@ fun AreaDetailScreen(
                                         tree = tree,
                                         onEdit = { viewModel.onEditTree(it) },
                                         onDelete = { viewModel.onDeleteTree(it) },
-                                        onStartPlanting = { 
+                                        onStartPlanting = {
                                             navController.navigate(
                                                 Screen.PlantingGuide.createRoute(
                                                     treeId = it.id,
@@ -260,6 +348,22 @@ fun AreaDetailScreen(
                 }
             }
 
+            // Add Snackbar for transient errors
+            if (state.transientError != null) {
+                Snackbar(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .align(Alignment.BottomCenter),
+                    action = {
+                        TextButton(onClick = { viewModel.dismissTransientError() }) {
+                            Text("Dismiss")
+                        }
+                    }
+                ) {
+                    Text(text = state.transientError)
+                }
+            }
+
             // FAB stays at the bottom
             FloatingActionButton(
                 onClick = { viewModel.onShowAddTreeDialog() },
@@ -274,7 +378,7 @@ fun AreaDetailScreen(
             if (state.showAddTreeDialog) {
                 AddTreeDialog(
                     onDismiss = { viewModel.onDismissAddTreeDialog() },
-                    onConfirm = { treeData -> 
+                    onConfirm = { treeData ->
                         viewModel.onAddCustomTree(treeData)
                     }
                 )
@@ -284,7 +388,7 @@ fun AreaDetailScreen(
                 EditTreeDialog(
                     tree = state.treeToEdit,
                     onDismiss = { viewModel.onDismissEditDialog() },
-                    onConfirm = { updatedTree -> 
+                    onConfirm = { updatedTree ->
                         viewModel.onUpdateTree(updatedTree)
                     }
                 )
@@ -300,7 +404,7 @@ private fun AreaMap(
 ) {
     // Convert GeoPoints to LatLng for the map
     val polygonPoints = area.points.map { LatLng(it.latitude, it.longitude) }
-    
+
     // Calculate center point of the area
     val center = if (polygonPoints.isNotEmpty()) {
         val latSum = polygonPoints.sumOf { it.latitude }

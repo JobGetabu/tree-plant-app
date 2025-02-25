@@ -50,7 +50,7 @@ class PlantingGuideViewModel @Inject constructor(
     private fun loadTreeProgress() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
-            
+
             try {
                 // Get guide steps for the species
                 val steps = firestoreRepository.getGuideSteps(species)
@@ -66,7 +66,7 @@ class PlantingGuideViewModel @Inject constructor(
                                 startDate = System.currentTimeMillis()
                             )
                             Log.d(TAG, "Loaded progress with ${currentProgress.completedSteps.size} completed steps")
-                            
+
                             _state.value = _state.value.copy(
                                 progress = currentProgress,
                                 guideSteps = steps,
@@ -162,7 +162,7 @@ class PlantingGuideViewModel @Inject constructor(
             onSuccess = { tree ->
                 if (tree != null) {
                     Log.d(TAG, "Found tree, scheduling reminders")
-                    notificationService.scheduleAllReminders(tree, isTestMode = true)
+                    notificationService.scheduleAllReminders(tree, isTestMode = false)
                 } else {
                     Log.e(TAG, "Tree not found for ID: $treeId")
                 }
@@ -194,7 +194,7 @@ class PlantingGuideViewModel @Inject constructor(
                 // Update tree progress with new photo
                 val updatedPhotos = _state.value.progress.photos + photoUrl
                 val updatedProgress = _state.value.progress.copy(photos = updatedPhotos)
-                
+
                 firestoreRepository.updateTreeProgress(updatedProgress)
                 Log.d(TAG, "Tree progress updated with new photo")
 
@@ -221,7 +221,7 @@ class PlantingGuideViewModel @Inject constructor(
                 // Update tree progress without the deleted photo
                 val updatedPhotos = _state.value.progress.photos - photoUrl
                 val updatedProgress = _state.value.progress.copy(photos = updatedPhotos)
-                
+
                 firestoreRepository.updateTreeProgress(updatedProgress)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(

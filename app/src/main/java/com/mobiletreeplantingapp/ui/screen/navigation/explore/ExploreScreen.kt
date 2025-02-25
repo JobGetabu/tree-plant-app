@@ -169,8 +169,29 @@ fun ExploreScreen(
                         viewModel.onEvent(ExploreEvent.FinalizeArea) 
                     }
                 ) {
-                    Icon(Icons.Default.Check, "Finalize Area")
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Icon(Icons.Default.Check, "Finalize Area")
+                    }
                 }
+            }
+        }
+
+        // Error Snackbar
+        if (state.error != null) {
+            Snackbar(
+                modifier = Modifier.padding(16.dp),
+                action = {
+                    TextButton(onClick = { viewModel.onEvent(ExploreEvent.DismissError) }) {
+                        Text("Dismiss")
+                    }
+                }
+            ) {
+                Text(text = "Error: ${state.error}")
             }
         }
 

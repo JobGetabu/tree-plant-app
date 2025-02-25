@@ -12,4 +12,5 @@ sealed class ExploreEvent {
     object ShowSaveDialog : ExploreEvent()
     object DismissSaveDialog : ExploreEvent()
     object SaveArea : ExploreEvent()
-} 
+    data object DismissError : ExploreEvent()
+}

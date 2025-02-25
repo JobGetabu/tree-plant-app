@@ -84,6 +84,9 @@ class ExploreViewModel @Inject constructor(
             is ExploreEvent.SaveArea -> {
                 saveArea()
             }
+            is ExploreEvent.DismissError -> {
+                state = state.copy(error = null)
+            }
         }
     }
 
@@ -97,7 +100,7 @@ class ExploreViewModel @Inject constructor(
     private fun finalizeArea() {
         viewModelScope.launch(dispatchers.io) {
             Log.d("ExploreViewModel", "Starting area finalization")
-            state = state.copy(isLoading = true, showBottomSheet = true)
+            state = state.copy(isLoading = true, showBottomSheet = true, error = null)
             
             try {
                 val centroid = calculateCentroid(state.polygonPoints)
@@ -118,22 +121,18 @@ class ExploreViewModel @Inject constructor(
                     }.onFailure { error ->
                         Log.e("ExploreViewModel", "Error: ${error.message}", error)
                         state = state.copy(
-                            soilType = "Data unavailable",
-                            altitude = "Data unavailable",
-                            climateZone = "Data unavailable",
-                            error = error.message,
-                            isLoading = false
+                            isLoading = false,
+                            error = "Failed to fetch area data. Please try again later.",
+                            isAreaFinalized = false
                         )
                     }
                 }
             } catch (e: Exception) {
                 Log.e("ExploreViewModel", "Error finalizing area", e)
                 state = state.copy(
-                    error = e.message,
-                    soilType = "Data unavailable",
-                    altitude = "Data unavailable",
-                    climateZone = "Data unavailable",
-                    isLoading = false
+                    isLoading = false,
+                    error = "An unexpected error occurred. Please try again later.",
+                    isAreaFinalized = false
                 )
             }
         }
@@ -225,4 +224,4 @@ class ExploreViewModel @Inject constructor(
             }
         }
     }
-} 
+}
