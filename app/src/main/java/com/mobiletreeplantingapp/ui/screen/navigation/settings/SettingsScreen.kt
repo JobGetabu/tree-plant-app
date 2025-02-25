@@ -37,6 +37,7 @@ import com.mobiletreeplantingapp.ui.component.ThemeSelector
 import coil.compose.AsyncImage
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.unit.Dp
 
 @Composable
 fun SettingsScreen(
@@ -149,78 +150,36 @@ fun SettingsScreen(
     }
 }
 
-
 @Composable
-private fun SettingsGroup(
-    title: String,
-    items: List<SettingsItem>
+private fun ProfilePicture(
+    photoUrl: String?,
+    size: Dp = 80.dp,
+    placeholder: Int = R.drawable.placeholder_profile
 ) {
-    Column(
-        modifier = Modifier.padding(vertical = 8.dp)
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
+        if (photoUrl != null) {
+            AsyncImage(
+                model = photoUrl,
+                contentDescription = "Profile picture",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                error = painterResource(id = placeholder)
             )
-        ) {
-            Column {
-                items.forEachIndexed { index, item ->
-                    SettingsItemRow(item = item)
-                    if (index < items.size - 1) {
-                        Divider(
-                            color = MaterialTheme.colorScheme.outlineVariant,
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
-                    }
-                }
-            }
+        } else {
+            Image(
+                painter = painterResource(id = placeholder),
+                contentDescription = "Profile picture",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
         }
     }
 }
-
-@Composable
-private fun SettingsItemRow(
-    item: SettingsItem
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = item.onClick != null, onClick = { item.onClick?.invoke() })
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = item.icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = item.title,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f)
-        )
-        item.content?.invoke()
-    }
-}
-
-private data class SettingsItem(
-    val icon: ImageVector,
-    val title: String,
-    val onClick: (() -> Unit)? = null,
-    val content: (@Composable () -> Unit)? = null
-)
 
 @Composable
 private fun ProfileSection() {
@@ -230,26 +189,7 @@ private fun ProfileSection() {
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (viewModel.userProfile.photoUrl != null) {
-            AsyncImage(
-                model = viewModel.userProfile.photoUrl,
-                contentDescription = "Profile picture",
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop,
-                error = painterResource(id = R.drawable.placeholder_profile)
-            )
-        } else {
-            Image(
-                painter = painterResource(id = R.drawable.placeholder_profile),
-                contentDescription = "Profile picture",
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
-        }
+        ProfilePicture(photoUrl = viewModel.userProfile.photoUrl)
         
         Spacer(modifier = Modifier.width(16.dp))
         Column {
@@ -276,6 +216,93 @@ private fun ProfileSection() {
         }
     }
 }
+
+@Composable
+private fun SettingsGroup(
+    title: String,
+    items: List<SettingsItem>
+) {
+    Column(
+        modifier = Modifier.padding(vertical = 4.dp) // Reduced vertical padding
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+        )
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Column {
+                items.forEachIndexed { index, item ->
+                    SettingsItemRow(
+                        item = item,
+                        isThemeSelector = item.title == "Theme"
+                    )
+                    if (index < items.size - 1) {
+                        Divider(
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsItemRow(
+    item: SettingsItem,
+    isThemeSelector: Boolean = false
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = item.onClick != null && !isThemeSelector, onClick = { item.onClick?.invoke() })
+            .padding(
+                horizontal = 16.dp,
+                vertical = if (isThemeSelector) 8.dp else 16.dp
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = if (isThemeSelector) Arrangement.SpaceBetween else Arrangement.Start
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
+        ) {
+            Icon(
+                imageVector = item.icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = item.title,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+        if (isThemeSelector) {
+            Box(modifier = Modifier.weight(1f)) {
+                item.content?.invoke()
+            }
+        } else {
+            item.content?.invoke()
+        }
+    }
+}
+
+private data class SettingsItem(
+    val icon: ImageVector,
+    val title: String,
+    val onClick: (() -> Unit)? = null,
+    val content: (@Composable () -> Unit)? = null
+)
 
 @Composable
 private fun StatisticsSection(

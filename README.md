@@ -1,18 +1,59 @@
-# 🔥 Firebase Authentication
-Firebase email & password and Google authentication with Jetpack Compose.
+# 🌳 Tree Planting Mobile App
 
-## 🧰 Tech stack
+A modern Android application for tracking and managing tree planting activities with location services and community features.
+
+## 🎯 Features
+- Tree planting location tracking
+- Photo documentation of planted trees
+- Community engagement system
+- Progress tracking and statistics
+- Real-time location mapping
+- Authentication system
+
+## 🧰 Tech Stack
 - Minimum SDK level 24
-- Kotlin based, Coroutines + Flow for asynchronous.
-- Jetpack Compose
-- MVVM Architecture
+- Kotlin-based development
+- Coroutines + Flow for asynchronous operations
+- Jetpack Compose for UI
+- Clean Architecture with MVVM pattern
 
-## 🗃️ Libraries
-- Firebase
-- Dagger Hilt
-- Lifecycle ViewModel
-- Navigation Compose
+## 📚 Libraries
+- Google Maps SDK for Android
+- Firebase (Authentication, Firestore, Storage)
+- Dagger Hilt for dependency injection
+- Jetpack Components:
+  - Navigation Compose
+  - ViewModel
+  - Room Database
+  - CameraX
+- Coil for image loading
+- Location Services
 
-## 📷 Screenshots
-![Firebase Authentication](https://lh3.googleusercontent.com/pw/AP1GczNs4w9KPcQFV9jQXKTropfuXlKWwlVf-8nK-TqaQ3CZN3H6ROQhgFTuB5vtJYMdy3G2VbrHA9FBtK9ZqV0QoigVJwF10HQvfHVZZuwQAQx3ZsUMn4uGLt4ol94cKHp9tlBwAixnXr2uM3wVMsj7xgwV=w420-h839-s-no-gm?authuser=0)
-Map API key: AIzaSyBGaUyFBDAo-ShGqXYBAkim5wiKPv3ExNs
+## 🔐 Setup
+1. Clone the repository
+2. Add your Google Maps API key in local.properties:
+   ```
+   MAPS_API_KEY=your_api_key_here
+   ```
+3. Configure Firebase:
+   - Add your google-services.json
+   - Enable Authentication and Firestore
+
+## 🏗️ Architecture
+- MVVM (Model-View-ViewModel)
+- Repository pattern
+- Clean Architecture principles
+- Single activity pattern
+
+## 📱 Screenshots
+[Add screenshots of your app here]
+
+## 🔜 Upcoming Features
+- Offline support
+- Gamification elements
+- Social sharing
+- Analytics dashboard
+- Tree species recognition
+
+## 📄 License
+This project is licensed under the MIT License - see the LICENSE file for details
