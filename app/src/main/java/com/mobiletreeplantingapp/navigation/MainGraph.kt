@@ -23,7 +23,6 @@ import com.mobiletreeplantingapp.ui.screen.forum.post.ForumPostScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.detail.AreaDetailScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.explore.ExploreScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.home.HomeScreen
-import com.mobiletreeplantingapp.ui.screen.navigation.mytrees.MyTreesScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.saved.SavedAreasScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsScreen
 import com.mobiletreeplantingapp.ui.screen.planting.PlantingGuideScreen

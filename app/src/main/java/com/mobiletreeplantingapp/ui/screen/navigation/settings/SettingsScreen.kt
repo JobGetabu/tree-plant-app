@@ -55,7 +55,7 @@ fun SettingsScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primaryContainer)
+                .background(MaterialTheme.colorScheme.primary)
                 .padding(24.dp)
         ) {
             ProfileSection()
@@ -223,7 +223,7 @@ private data class SettingsItem(
 )
 
 @Composable
-private fun ProfileSection() {  // Remove parameters
+private fun ProfileSection() {
     val viewModel: SettingsViewModel = hiltViewModel()
     
     Row(
@@ -254,14 +254,24 @@ private fun ProfileSection() {  // Remove parameters
         Spacer(modifier = Modifier.width(16.dp))
         Column {
             Text(
-                text = viewModel.userProfile.displayName,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                text = viewModel.userProfile.displayName ?: "Tree Planter",  // Default name if null
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
             )
             Text(
-                text = viewModel.userProfile.email,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = viewModel.userProfile.email ?: "example@email.com",  // Default email if null
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "Tree Planting Enthusiast",  // Added subtitle
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
             )
         }
     }
