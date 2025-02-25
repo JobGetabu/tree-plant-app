@@ -85,7 +85,7 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         // Comment this out after seeding the data
         // viewModel.seedSampleData()
-       // TreeRecommendationSeeder.seedTreeRecommendations()
+        //TreeRecommendationSeeder.seedTreeRecommendations()
     }
 
     Column(
