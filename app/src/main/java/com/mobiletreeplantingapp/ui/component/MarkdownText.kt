@@ -5,6 +5,8 @@ import android.widget.TextView
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import io.noties.markwon.Markwon
 import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
 import io.noties.markwon.ext.tables.TablePlugin
@@ -14,13 +16,17 @@ import io.noties.markwon.linkify.LinkifyPlugin
 @Composable
 fun MarkdownText(
     markdown: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    textColor: Color = Color.Unspecified
 ) {
     AndroidView(
         modifier = modifier,
         factory = { context ->
             TextView(context).apply {
                 movementMethod = LinkMovementMethod.getInstance()
+                if (textColor != Color.Unspecified) {
+                    setTextColor(textColor.toArgb())
+                }
             }
         },
         update = { textView ->
@@ -32,6 +38,9 @@ fun MarkdownText(
                 .build()
             
             markwon.setMarkdown(textView, markdown)
+            if (textColor != Color.Unspecified) {
+                textView.setTextColor(textColor.toArgb())
+            }
         }
     )
 } 
