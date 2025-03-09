@@ -47,18 +47,21 @@ class SettingsViewModel @Inject constructor(
                 currentTheme = theme
             }
         }
-        loadUserProfile()
+        observeUserProfile()
         loadUserStats()
     }
 
-    private fun loadUserProfile() {
-        val firebaseUser = FirebaseAuth.getInstance().currentUser
-        firebaseUser?.let { user ->
-            userProfile = UserProfile(
-                displayName = user.displayName ?: "Tree Planter",
-                email = user.email ?: "",
-                photoUrl = user.photoUrl?.toString()
-            )
+    private fun observeUserProfile() {
+        viewModelScope.launch {
+            firestoreRepository.getUserProfile()
+                .catch { e ->
+                    // Handle error
+                }
+                .collect { result ->
+                    result.onSuccess { profile ->
+                        userProfile = profile
+                    }
+                }
         }
     }
 

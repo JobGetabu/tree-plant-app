@@ -171,6 +171,61 @@ class StorageRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun uploadProfileImage(photoUri: Uri): String = withContext(Dispatchers.IO) {
+        try {
+            val userId = FirebaseAuth.getInstance().currentUser?.uid 
+                ?: throw IllegalStateException("User not authenticated")
+            
+            Log.d(TAG, "Starting profile image upload for user: $userId")
+            
+            // Create organized file structure
+            val timestamp = System.currentTimeMillis()
+            val fileName = "profile_$timestamp.jpg"
+            val photoRef = storageRef
+                .child("users")
+                .child(userId)
+                .child("profile")
+                .child(fileName)
+            
+            Log.d(TAG, "Uploading to path: ${photoRef.path}")
+
+            // Read and compress the image
+            val bitmap = context.contentResolver.openInputStream(photoUri)?.use { inputStream ->
+                BitmapFactory.decodeStream(inputStream)
+            } ?: throw IllegalStateException("Could not read file")
+
+            // Compress image
+            val baos = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos)
+            val compressedBytes = baos.toByteArray()
+
+            // Upload bytes
+            val uploadTask = photoRef.putBytes(compressedBytes)
+            
+            // Monitor upload
+            uploadTask.addOnProgressListener { taskSnapshot ->
+                val progress = (100.0 * taskSnapshot.bytesTransferred) / taskSnapshot.totalByteCount
+                Log.d(TAG, "Upload is $progress% done")
+            }
+
+            // Wait for completion
+            uploadTask.await()
+            
+            // Get download URL
+            val downloadUrl = photoRef.downloadUrl.await().toString()
+            Log.d(TAG, "Profile image upload successful. Download URL: $downloadUrl")
+
+            // Cleanup
+            bitmap.recycle()
+            baos.close()
+            
+            return@withContext downloadUrl
+        } catch (e: Exception) {
+            Log.e(TAG, "Error uploading profile image: ${e.message}", e)
+            throw e
+        }
+    }
+
     companion object {
         private const val TAG = "StorageRepositoryImpl"
     }

@@ -28,6 +28,7 @@ import kotlinx.coroutines.withContext
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.firestore.GeoPoint
 import kotlinx.coroutines.launch
+import android.net.Uri
 
 @Singleton
 class FirestoreRepositoryImpl @Inject constructor(
@@ -807,6 +808,30 @@ class FirestoreRepositoryImpl @Inject constructor(
             .document(user.uid)
             .set(
                 mapOf("displayName" to displayName),
+                SetOptions.merge()
+            )
+            .await()
+
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun updateUserProfileImage(photoUrl: String): Result<Unit> = try {
+        val user = auth.currentUser ?: throw Exception("User not authenticated")
+
+        // Update Firebase Auth profile image
+        user.updateProfile(
+            userProfileChangeRequest {
+                setPhotoUri(Uri.parse(photoUrl))
+            }
+        ).await()
+
+        // Update Firestore user document
+        firestore.collection("users")
+            .document(user.uid)
+            .set(
+                mapOf("photoUrl" to photoUrl),
                 SetOptions.merge()
             )
             .await()

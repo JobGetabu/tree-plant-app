@@ -43,6 +43,7 @@ interface FirestoreRepository {
 
     // New methods for user profile
     suspend fun updateUserProfile(displayName: String): Result<Unit>
+    suspend fun updateUserProfileImage(photoUrl: String): Result<Unit>
     fun getUserProfile(): Flow<Result<SettingsViewModel.UserProfile>>
 
     suspend fun deleteArea(areaId: String): Result<Unit>
