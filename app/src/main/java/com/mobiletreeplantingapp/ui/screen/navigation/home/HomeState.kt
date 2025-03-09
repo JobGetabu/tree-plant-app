@@ -8,6 +8,8 @@ data class HomeState(
     val latestPosts: List<ForumPost> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val treesPlanted: Int = 0,
-    val co2Offset: Int = 0
+    val globalTreesPlanted: Int = 0,
+    val globalCo2Offset: Int = 0,
+    val userTreesPlanted: Int = 0,
+    val userCo2Offset: Int = 0
 ) 

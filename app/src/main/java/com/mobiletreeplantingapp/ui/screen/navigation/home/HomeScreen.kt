@@ -156,8 +156,8 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 AnimatedStatColumn(
-                    title = "Trees Planted",
-                    value = state.treesPlanted.toString(),
+                    title = "Global Trees Planted",
+                    value = state.globalTreesPlanted.toString(),
                     icon = Icons.Default.Forest
                 )
                 Divider(
@@ -167,8 +167,8 @@ fun HomeScreen(
                         .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
                 )
                 AnimatedStatColumn(
-                    title = "CO₂ Offset",
-                    value = "${state.co2Offset}kg",
+                    title = "Global CO₂",
+                    value = "${state.globalCo2Offset}kg",
                     icon = Icons.Default.Co2
                 )
             }

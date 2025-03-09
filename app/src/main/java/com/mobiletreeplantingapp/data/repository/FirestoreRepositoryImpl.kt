@@ -27,6 +27,7 @@ import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsViewModel
 import kotlinx.coroutines.withContext
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.firestore.GeoPoint
+import kotlinx.coroutines.launch
 
 @Singleton
 class FirestoreRepositoryImpl @Inject constructor(
@@ -200,33 +201,31 @@ class FirestoreRepositoryImpl @Inject constructor(
             )
         )
 
-        // Update user stats with atomic operations
+        // Update user stats
         val userRef = firestore.collection("users").document(userId)
-        val statsUpdate = mutableMapOf<String, Any>(
-            "treesPlanted" to FieldValue.increment(1),
-            "co2Offset" to FieldValue.increment(20), // 20kg CO2 per tree
-            "lastPlantingDate" to FieldValue.serverTimestamp()
+        batch.set(
+            userRef,
+            mapOf(
+                "treesPlanted" to FieldValue.increment(1),
+                "co2Offset" to FieldValue.increment(20)
+            ),
+            SetOptions.merge()
         )
 
-        // Get the area size and update total area if needed
-        val areaDoc = areasCollection.document(tree.areaId).get().await()
-        val area = areaDoc.toObject(SavedArea::class.java)
-        area?.let {
-            // Only update area stats if it's the first tree in this area
-            val existingTrees = treesCollection
-                .whereEqualTo("areaId", tree.areaId)
-                .get()
-                .await()
-            if (existingTrees.isEmpty) {
-                statsUpdate["totalArea"] = FieldValue.increment(it.areaSize)
-            }
-        }
-
-        batch.set(userRef, statsUpdate, SetOptions.merge())
+        // Ensure global stats document exists and update it
+        val globalStatsRef = firestore.collection("global_stats").document("totals")
+        batch.set(
+            globalStatsRef,
+            mapOf(
+                "treesPlanted" to FieldValue.increment(1),
+                "co2Offset" to FieldValue.increment(20)
+            ),
+            SetOptions.merge()
+        )
 
         // Commit all operations
         batch.commit().await()
-        Log.d(TAG, "Successfully saved tree and updated user stats")
+        Log.d(TAG, "Successfully saved tree and updated all stats")
 
         Result.success(Unit)
     } catch (e: Exception) {
@@ -254,6 +253,13 @@ class FirestoreRepositoryImpl @Inject constructor(
         batch.update(userRef, mapOf(
             "treesPlanted" to FieldValue.increment(-1),
             "co2Offset" to FieldValue.increment(-20) // Assuming 20kg CO2 per tree
+        ))
+
+        // Update global stats (decrement counters)
+        val globalStatsRef = firestore.collection("global_stats").document("totals")
+        batch.update(globalStatsRef, mapOf(
+            "treesPlanted" to FieldValue.increment(-1),
+            "co2Offset" to FieldValue.increment(-20)
         ))
 
         // Commit the batch
@@ -532,6 +538,86 @@ class FirestoreRepositoryImpl @Inject constructor(
             }
 
         awaitClose { listener.remove() }
+    }
+
+    override suspend fun getGlobalStats(): Flow<Result<UserStats>> = callbackFlow {
+        try {
+            // Initialize global stats first
+            initializeGlobalStats()
+
+            // Then set up the listener
+            val globalStatsRef = firestore.collection("global_stats").document("totals")
+            val listener = globalStatsRef.addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "Error in global stats listener", error)
+                    trySend(Result.failure(error))
+                    return@addSnapshotListener
+                }
+
+                if (snapshot == null || !snapshot.exists()) {
+                    Log.d(TAG, "No global stats document exists")
+                    trySend(Result.success(UserStats()))
+                    return@addSnapshotListener
+                }
+
+                val treesPlanted = snapshot.getLong("treesPlanted")?.toInt() ?: 0
+                val co2Offset = snapshot.getLong("co2Offset")?.toInt() ?: 0
+                val totalArea = snapshot.getDouble("totalArea") ?: 0.0
+
+                Log.d(TAG, "Global stats updated: trees=$treesPlanted, co2=$co2Offset")
+
+                val stats = UserStats(
+                    treesPlanted = treesPlanted,
+                    co2Offset = co2Offset,
+                    totalArea = totalArea
+                )
+
+                trySend(Result.success(stats))
+            }
+
+            awaitClose { listener.remove() }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in getGlobalStats", e)
+            trySend(Result.failure(e))
+            close(e)
+        }
+    }
+
+    private suspend fun initializeGlobalStats() {
+        try {
+            val globalStatsRef = firestore.collection("global_stats").document("totals")
+            val snapshot = globalStatsRef.get().await()
+            
+            if (!snapshot.exists()) {
+                Log.d(TAG, "Initializing global stats...")
+                // Calculate total trees and CO2 from all users
+                val usersSnapshot = firestore.collection("users").get().await()
+                var totalTrees = 0
+                var totalCO2 = 0
+                
+                for (userDoc in usersSnapshot.documents) {
+                    val userTrees = userDoc.getLong("treesPlanted")?.toInt() ?: 0
+                    val userCO2 = userDoc.getLong("co2Offset")?.toInt() ?: 0
+                    totalTrees += userTrees
+                    totalCO2 += userCO2
+                    Log.d(TAG, "Adding user stats: trees=$userTrees, co2=$userCO2")
+                }
+                
+                globalStatsRef.set(
+                    mapOf(
+                        "treesPlanted" to totalTrees,
+                        "co2Offset" to totalCO2,
+                        "totalArea" to 0.0
+                    )
+                ).await()
+                
+                Log.d(TAG, "Successfully initialized global stats with $totalTrees trees and $totalCO2 kg CO2")
+            } else {
+                Log.d(TAG, "Global stats document already exists")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing global stats", e)
+        }
     }
 
     private fun calculateAreaSize(points: List<LatLng>): Double {

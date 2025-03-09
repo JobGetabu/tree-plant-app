@@ -73,6 +73,24 @@ class HomeViewModel @Inject constructor(
                     }
             }
 
+            // Load global stats
+            launch {
+                firestoreRepository.getGlobalStats()
+                    .catch { e ->
+                        state = state.copy(
+                            error = "Failed to load global stats: ${e.message}"
+                        )
+                    }
+                    .collect { result ->
+                        result.onSuccess { stats ->
+                            state = state.copy(
+                                globalTreesPlanted = stats.treesPlanted,
+                                globalCo2Offset = stats.co2Offset
+                            )
+                        }
+                    }
+            }
+
             // Load user stats
             launch {
                 firestoreRepository.getUserStats()
@@ -84,8 +102,8 @@ class HomeViewModel @Inject constructor(
                     .collect { result ->
                         result.onSuccess { stats ->
                             state = state.copy(
-                                treesPlanted = stats.treesPlanted,
-                                co2Offset = stats.co2Offset
+                                userTreesPlanted = stats.treesPlanted,
+                                userCo2Offset = stats.co2Offset
                             )
                         }
                     }

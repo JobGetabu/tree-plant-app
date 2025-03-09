@@ -31,6 +31,7 @@ interface FirestoreRepository {
     suspend fun getTreeProgress(treeId: String): Flow<Result<TreeProgress?>>
 
     suspend fun getUserStats(): Flow<Result<UserStats>>
+    suspend fun getGlobalStats(): Flow<Result<UserStats>>
 
     suspend fun getTreeRecommendations(
         soilType: String,
