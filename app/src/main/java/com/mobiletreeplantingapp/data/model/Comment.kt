@@ -6,7 +6,8 @@ data class Comment(
     val authorId: String = "",
     val authorName: String = "",
     val timestamp: Long = System.currentTimeMillis(),
-    val isCurrentUserAuthor: Boolean = false
+    val isCurrentUserAuthor: Boolean = false,
+    val imageUrl: String? = null
 ) {
     companion object {
         fun fromFirestore(
@@ -21,7 +22,8 @@ data class Comment(
                 authorName = data["authorName"] as? String ?: "Anonymous",
                 timestamp = (data["timestamp"] as? com.google.firebase.Timestamp)?.toDate()?.time 
                     ?: System.currentTimeMillis(),
-                isCurrentUserAuthor = data["authorId"] as? String == currentUserId
+                isCurrentUserAuthor = data["authorId"] as? String == currentUserId,
+                imageUrl = data["imageUrl"] as? String
             )
         }
     }

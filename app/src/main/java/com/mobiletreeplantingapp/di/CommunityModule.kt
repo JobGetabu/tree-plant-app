@@ -2,6 +2,7 @@ package com.mobiletreeplantingapp.di
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import com.mobiletreeplantingapp.data.repository.CommunityRepository
 import com.mobiletreeplantingapp.data.repository.CommunityRepositoryImpl
 import dagger.Module
@@ -18,8 +19,9 @@ object CommunityModule {
     @Singleton
     fun provideCommunityRepository(
         firestore: FirebaseFirestore,
-        auth: FirebaseAuth
+        auth: FirebaseAuth,
+        storage: FirebaseStorage
     ): CommunityRepository {
-        return CommunityRepositoryImpl(firestore, auth)
+        return CommunityRepositoryImpl(firestore, auth, storage)
     }
 } 

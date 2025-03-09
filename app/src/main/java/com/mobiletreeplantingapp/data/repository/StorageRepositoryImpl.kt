@@ -31,13 +31,11 @@ import javax.inject.Singleton
 
 @Singleton
 class StorageRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val storage: FirebaseStorage
 ) : StorageRepository {
 
-    private val storage: FirebaseStorage by lazy {
-        val storageUrl = "gs://fir-nodejs-api.appspot.com"
-        FirebaseStorage.getInstance(storageUrl)
-    }
+    private val storageRef = storage.reference
 
     override suspend fun uploadTreePhoto(treeId: String, photoUri: Uri): String = withContext(Dispatchers.IO) {
         try {
@@ -51,7 +49,7 @@ class StorageRepositoryImpl @Inject constructor(
             // Create organized file structure
             val timestamp = System.currentTimeMillis()
             val fileName = "photo_$timestamp.jpg"
-            val photoRef = storage.reference
+            val photoRef = storageRef
                 .child("trees")
                 .child(treeId)
                 .child("photos")
@@ -105,7 +103,7 @@ class StorageRepositoryImpl @Inject constructor(
 
             Log.d(TAG, "Starting to fetch photos for tree: $treeId")
             
-            val photosRef = storage.reference
+            val photosRef = storageRef
                 .child("trees")
                 .child(treeId)
                 .child("photos")

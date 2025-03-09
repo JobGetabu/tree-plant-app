@@ -1,5 +1,6 @@
 package com.mobiletreeplantingapp.ui.screen.forum.post
 
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -90,6 +91,21 @@ class ForumPostViewModel @Inject constructor(
         }
     }
 
+    fun addCommentWithImage(text: String, imageUri: Uri) {
+        val post = state.post ?: return
+        viewModelScope.launch {
+            try {
+                state = state.copy(isAddingComment = true)
+                val commentId = communityRepository.addCommentWithImage(post.id, text, imageUri).getOrThrow()
+                // Reload comments
+                loadPost(post.id)
+                state = state.copy(isAddingComment = false)
+            } catch (e: Exception) {
+                state = state.copy(error = e.message, isAddingComment = false)
+            }
+        }
+    }
+
     fun deleteComment(commentId: String) {
         viewModelScope.launch {
             try {
@@ -120,5 +136,6 @@ data class ForumPostState(
     val post: ForumPost? = null,
     val comments: List<Comment> = emptyList(),
     val isLoading: Boolean = false,
+    val isAddingComment: Boolean = false,
     val error: String? = null
 ) 

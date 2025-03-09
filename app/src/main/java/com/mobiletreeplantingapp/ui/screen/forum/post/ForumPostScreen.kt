@@ -1,5 +1,10 @@
 package com.mobiletreeplantingapp.ui.screen.forum.post
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,12 +23,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -42,8 +50,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.mobiletreeplantingapp.data.model.Comment
 import com.mobiletreeplantingapp.data.model.ForumPost
 import com.mobiletreeplantingapp.navigation.Screen
@@ -103,6 +116,7 @@ fun ForumPostScreen(
                         state = state,
                         onUpvote = viewModel::upvotePost,
                         onAddComment = viewModel::addComment,
+                        onAddCommentWithImage = viewModel::addCommentWithImage,
                         onDeleteComment = viewModel::deleteComment
                     )
                 }
@@ -141,10 +155,18 @@ private fun PostContent(
     state: ForumPostState,
     onUpvote: () -> Unit,
     onAddComment: (String) -> Unit,
+    onAddCommentWithImage: (String, Uri) -> Unit,
     onDeleteComment: (String) -> Unit
 ) {
     var commentText by remember { mutableStateOf("") }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val listState = rememberLazyListState()
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        selectedImageUri = uri
+    }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -181,30 +203,95 @@ private fun PostContent(
             modifier = Modifier.fillMaxWidth(),
             shadowElevation = 8.dp
         ) {
-            Row(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.padding(16.dp)
             ) {
-                OutlinedTextField(
-                    value = commentText,
-                    onValueChange = { commentText = it },
-                    placeholder = { Text("Add a comment...") },
-                    modifier = Modifier.weight(1f),
-                    maxLines = 3
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(
-                    onClick = {
-                        if (commentText.isNotBlank()) {
-                            onAddComment(commentText)
-                            commentText = ""
+                // Selected image preview
+                selectedImageUri?.let { uri ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .padding(bottom = 8.dp)
+                    ) {
+                        Image(
+                            painter = rememberAsyncImagePainter(
+                                ImageRequest.Builder(LocalContext.current)
+                                    .data(uri)
+                                    .crossfade(true)
+                                    .build()
+                            ),
+                            contentDescription = "Selected image",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.medium),
+                            contentScale = ContentScale.Crop
+                        )
+                        
+                        // Remove image button
+                        IconButton(
+                            onClick = { selectedImageUri = null },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                    shape = MaterialTheme.shapes.small
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Remove image",
+                                tint = MaterialTheme.colorScheme.error
+                            )
                         }
-                    },
-                    enabled = commentText.isNotBlank()
+                    }
+                }
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Send, "Send comment")
+                    OutlinedTextField(
+                        value = commentText,
+                        onValueChange = { commentText = it },
+                        placeholder = { Text("Add a comment...") },
+                        modifier = Modifier.weight(1f),
+                        maxLines = 3
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    // Image picker button
+                    IconButton(
+                        onClick = { imagePickerLauncher.launch("image/*") }
+                    ) {
+                        Icon(Icons.Default.Image, "Add image")
+                    }
+                    
+                    Spacer(modifier = Modifier.width(4.dp))
+                    
+                    // Send button
+                    IconButton(
+                        onClick = {
+                            if (commentText.isNotBlank()) {
+                                selectedImageUri?.let { uri ->
+                                    onAddCommentWithImage(commentText, uri)
+                                } ?: onAddComment(commentText)
+                                
+                                commentText = ""
+                                selectedImageUri = null
+                            }
+                        },
+                        enabled = commentText.isNotBlank() && !state.isAddingComment
+                    ) {
+                        if (state.isAddingComment) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(Icons.Default.Send, "Send comment")
+                        }
+                    }
                 }
             }
         }
@@ -226,6 +313,26 @@ private fun PostHeader(
             text = post.content,
             style = MaterialTheme.typography.bodyLarge
         )
+        
+        // Display post image if available
+        post.imageUrl?.let { imageUrl ->
+            Spacer(modifier = Modifier.height(12.dp))
+            Image(
+                painter = rememberAsyncImagePainter(
+                    ImageRequest.Builder(LocalContext.current)
+                        .data(imageUrl)
+                        .crossfade(true)
+                        .build()
+                ),
+                contentDescription = "Post image",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(MaterialTheme.shapes.medium),
+                contentScale = ContentScale.Crop
+            )
+        }
+        
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -297,6 +404,26 @@ private fun CommentItem(
                 text = comment.text,
                 style = MaterialTheme.typography.bodyMedium
             )
+            
+            // Display comment image if available
+            comment.imageUrl?.let { imageUrl ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Image(
+                    painter = rememberAsyncImagePainter(
+                        ImageRequest.Builder(LocalContext.current)
+                            .data(imageUrl)
+                            .crossfade(true)
+                            .build()
+                    ),
+                    contentDescription = "Comment image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp)
+                        .clip(MaterialTheme.shapes.medium),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            
             if (comment.isCurrentUserAuthor) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),

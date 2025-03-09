@@ -10,7 +10,8 @@ data class ForumPost(
     val upvotes: Int = 0,
     val commentCount: Int = 0,
     val isUpvotedByUser: Boolean = false,
-    val isCurrentUserAuthor: Boolean = false
+    val isCurrentUserAuthor: Boolean = false,
+    val imageUrl: String? = null
 ) {
     // Add a companion object for Firestore serialization
     companion object {
@@ -30,7 +31,8 @@ data class ForumPost(
                 upvotes = (data["upvotes"] as? Number)?.toInt() ?: 0,
                 commentCount = (data["commentCount"] as? Number)?.toInt() ?: 0,
                 isUpvotedByUser = false, // This will be set separately
-                isCurrentUserAuthor = data["authorId"] as? String == currentUserId
+                isCurrentUserAuthor = data["authorId"] as? String == currentUserId,
+                imageUrl = data["imageUrl"] as? String
             )
         }
     }

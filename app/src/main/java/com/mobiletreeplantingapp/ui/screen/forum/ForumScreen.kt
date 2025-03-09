@@ -1,11 +1,18 @@
 package com.mobiletreeplantingapp.ui.screen.forum
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +25,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -41,9 +49,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.mobiletreeplantingapp.data.model.ForumPost
 import com.mobiletreeplantingapp.ui.component.ErrorView
 import com.mobiletreeplantingapp.ui.util.formatRelativeTime
@@ -110,8 +123,12 @@ fun ForumScreen(
     if (showNewPostDialog) {
         NewPostDialog(
             onDismiss = { showNewPostDialog = false },
-            onSubmit = { title, content ->
-                viewModel.createPost(title, content)
+            onSubmit = { title, content, imageUri ->
+                if (imageUri != null) {
+                    viewModel.createPostWithImage(title, content, imageUri)
+                } else {
+                    viewModel.createPost(title, content)
+                }
                 showNewPostDialog = false
             }
         )
@@ -170,6 +187,25 @@ private fun ForumPostCard(
                 overflow = TextOverflow.Ellipsis
             )
             
+            // Display image if available
+            post.imageUrl?.let { imageUrl ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Image(
+                    painter = rememberAsyncImagePainter(
+                        ImageRequest.Builder(LocalContext.current)
+                            .data(imageUrl)
+                            .crossfade(true)
+                            .build()
+                    ),
+                    contentDescription = "Post image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp)
+                        .clip(MaterialTheme.shapes.medium),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            
             Spacer(modifier = Modifier.height(8.dp))
             
             Row(
@@ -226,10 +262,17 @@ private fun ForumPostCard(
 @Composable
 private fun NewPostDialog(
     onDismiss: () -> Unit,
-    onSubmit: (title: String, content: String) -> Unit
+    onSubmit: (title: String, content: String, imageUri: Uri?) -> Unit
 ) {
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        selectedImageUri = uri
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -254,11 +297,72 @@ private fun NewPostDialog(
                     maxLines = 5,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Image selection
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = { imagePickerLauncher.launch("image/*") }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Image,
+                            contentDescription = "Add Image"
+                        )
+                        Spacer(modifier = Modifier.size(4.dp))
+                        Text("Add Image")
+                    }
+
+                    // Show selected image preview
+                    selectedImageUri?.let {
+                        Box(
+                            modifier = Modifier
+                                .size(60.dp)
+                                .clip(MaterialTheme.shapes.small)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Image(
+                                painter = rememberAsyncImagePainter(
+                                    ImageRequest.Builder(LocalContext.current)
+                                        .data(it)
+                                        .crossfade(true)
+                                        .build()
+                                ),
+                                contentDescription = "Selected image",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                            
+                            // Add remove button
+                            IconButton(
+                                onClick = { selectedImageUri = null },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .size(24.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                        shape = MaterialTheme.shapes.small
+                                    )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Remove image",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
             Button(
-                onClick = { onSubmit(title, content) },
+                onClick = { onSubmit(title, content, selectedImageUri) },
                 enabled = title.isNotBlank() && content.isNotBlank()
             ) {
                 Text("Post")

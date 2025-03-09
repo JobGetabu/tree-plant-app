@@ -1,9 +1,11 @@
 package com.mobiletreeplantingapp.data.repository
 
+import android.net.Uri
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.storage.FirebaseStorage
 import com.mobiletreeplantingapp.data.model.Article
 import com.mobiletreeplantingapp.data.model.ArticleCategory
 import com.mobiletreeplantingapp.data.model.Comment
@@ -19,15 +21,18 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 @Singleton
 class CommunityRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val storage: FirebaseStorage
 ) : CommunityRepository {
 
     private val articlesCollection = firestore.collection("articles")
     private val forumCollection = firestore.collection("forum_posts")
+    private val storageRef = storage.reference
 
     override fun getLatestArticles(): Flow<Result<List<Article>>> = callbackFlow {
         val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not logged in")
@@ -357,5 +362,64 @@ class CommunityRepositoryImpl @Inject constructor(
                 transaction.delete(postRef)
             }.await()
         }
+    }
+
+    override suspend fun createForumPostWithImage(title: String, content: String, imageUri: Uri): Result<String> = try {
+        val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not logged in")
+        val userName = auth.currentUser?.displayName ?: "Anonymous"
+
+        // Upload image to Firebase Storage
+        val imageFileName = "forum_posts/${UUID.randomUUID()}"
+        val imageRef = storageRef.child(imageFileName)
+        val uploadTask = imageRef.putFile(imageUri).await()
+        val imageUrl = imageRef.downloadUrl.await().toString()
+
+        val post = hashMapOf(
+            "title" to title,
+            "content" to content,
+            "authorId" to userId,
+            "authorName" to userName,
+            "timestamp" to FieldValue.serverTimestamp(),
+            "upvotes" to 0,
+            "commentCount" to 0,
+            "imageUrl" to imageUrl
+        )
+
+        val docRef = forumCollection.add(post).await()
+        Result.success(docRef.id)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun addCommentWithImage(postId: String, text: String, imageUri: Uri): Result<String> = try {
+        val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not logged in")
+        val userName = auth.currentUser?.displayName ?: "Anonymous"
+
+        // Upload image to Firebase Storage
+        val imageFileName = "forum_comments/${UUID.randomUUID()}"
+        val imageRef = storageRef.child(imageFileName)
+        val uploadTask = imageRef.putFile(imageUri).await()
+        val imageUrl = imageRef.downloadUrl.await().toString()
+
+        val comment = hashMapOf(
+            "text" to text,
+            "authorId" to userId,
+            "authorName" to userName,
+            "timestamp" to FieldValue.serverTimestamp(),
+            "imageUrl" to imageUrl
+        )
+
+        firestore.runTransaction { transaction ->
+            val postRef = forumCollection.document(postId)
+            transaction.update(postRef, "commentCount", FieldValue.increment(1))
+            
+            val commentRef = postRef.collection("comments").document()
+            transaction.set(commentRef, comment)
+            commentRef.id
+        }.await()
+        
+        Result.success(postId)
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 } 

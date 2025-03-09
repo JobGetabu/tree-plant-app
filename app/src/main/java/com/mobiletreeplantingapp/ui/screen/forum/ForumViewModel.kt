@@ -1,5 +1,6 @@
 package com.mobiletreeplantingapp.ui.screen.forum
 
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -52,6 +53,18 @@ class ForumViewModel @Inject constructor(
                 loadPosts() // Reload posts after creating new one
             } catch (e: Exception) {
                 state = state.copy(error = e.message)
+            }
+        }
+    }
+
+    fun createPostWithImage(title: String, content: String, imageUri: Uri) {
+        viewModelScope.launch {
+            try {
+                state = state.copy(isLoading = true)
+                communityRepository.createForumPostWithImage(title, content, imageUri)
+                loadPosts() // Reload posts after creating new one
+            } catch (e: Exception) {
+                state = state.copy(error = e.message, isLoading = false)
             }
         }
     }
