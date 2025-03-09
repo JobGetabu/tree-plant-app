@@ -2,8 +2,8 @@ package com.mobiletreeplantingapp.ui.screen.navigation.detail
 
 import com.mobiletreeplantingapp.data.model.SavedArea
 import com.mobiletreeplantingapp.data.model.SavedTree
-import com.mobiletreeplantingapp.data.model.TreeRecommendation
 import com.mobiletreeplantingapp.data.model.SoilData
+import com.mobiletreeplantingapp.data.model.TreeRecommendation
 
 data class AreaDetailState(
     val area: SavedArea? = null,

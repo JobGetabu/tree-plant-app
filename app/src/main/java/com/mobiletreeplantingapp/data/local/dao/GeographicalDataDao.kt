@@ -1,7 +1,11 @@
 package com.mobiletreeplantingapp.data.local.dao
 
 import android.util.Log
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
 import com.mobiletreeplantingapp.data.local.entity.GeographicalDataEntity
 import kotlinx.coroutines.flow.Flow
 

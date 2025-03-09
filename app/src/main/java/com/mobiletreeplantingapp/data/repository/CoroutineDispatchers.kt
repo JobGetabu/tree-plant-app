@@ -1,7 +1,6 @@
 package com.mobiletreeplantingapp.data.repository
 
 import kotlinx.coroutines.Dispatchers
-import javax.inject.Inject
 
 data class CoroutineDispatchers(
     val io: kotlinx.coroutines.CoroutineDispatcher = Dispatchers.IO,

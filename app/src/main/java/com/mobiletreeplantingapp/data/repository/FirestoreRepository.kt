@@ -1,17 +1,13 @@
 package com.mobiletreeplantingapp.data.repository
 
-import com.mobiletreeplantingapp.data.model.SavedArea
-import com.mobiletreeplantingapp.data.model.TreeProgress
 import com.mobiletreeplantingapp.data.model.GuideStep
+import com.mobiletreeplantingapp.data.model.SavedArea
 import com.mobiletreeplantingapp.data.model.SavedTree
-import com.mobiletreeplantingapp.data.model.UserStats
+import com.mobiletreeplantingapp.data.model.TreeProgress
 import com.mobiletreeplantingapp.data.model.TreeRecommendationData
-import kotlinx.coroutines.flow.Flow
-import com.google.firebase.firestore.FirebaseFirestore
+import com.mobiletreeplantingapp.data.model.UserStats
 import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsViewModel
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.CoroutineDispatcher
-import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 
 interface FirestoreRepository {
     suspend fun saveArea(area: SavedArea): Result<Unit>

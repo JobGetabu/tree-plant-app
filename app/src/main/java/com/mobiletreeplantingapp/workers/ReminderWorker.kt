@@ -6,12 +6,12 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.mobiletreeplantingapp.R
 import com.mobiletreeplantingapp.ui.MainActivity
-import android.util.Log
 
 class ReminderWorker(
     private val context: Context,

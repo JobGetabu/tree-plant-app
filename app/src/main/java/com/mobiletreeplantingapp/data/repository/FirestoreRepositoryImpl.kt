@@ -1,34 +1,27 @@
 package com.mobiletreeplantingapp.data.repository
 
+import android.net.Uri
+import android.util.Log
+import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.auth.userProfileChangeRequest
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
-import com.mobiletreeplantingapp.data.model.SavedArea
-import com.mobiletreeplantingapp.data.model.TreeProgress
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.mobiletreeplantingapp.data.model.GuideStep
+import com.mobiletreeplantingapp.data.model.SavedArea
+import com.mobiletreeplantingapp.data.model.SavedTree
+import com.mobiletreeplantingapp.data.model.TreeProgress
+import com.mobiletreeplantingapp.data.model.TreeRecommendationData
+import com.mobiletreeplantingapp.data.model.UserStats
+import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsViewModel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
-import android.util.Log
-import com.google.firebase.auth.userProfileChangeRequest
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.tasks.await
-import com.google.firebase.firestore.Query
-import com.mobiletreeplantingapp.data.model.SavedTree
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.SetOptions
-import com.mobiletreeplantingapp.data.model.UserStats
-import com.mobiletreeplantingapp.data.model.TreeRecommendationData
-import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsViewModel
-import kotlinx.coroutines.withContext
-import com.google.android.gms.maps.model.LatLng
-import com.google.firebase.firestore.GeoPoint
-import kotlinx.coroutines.launch
-import android.net.Uri
 
 @Singleton
 class FirestoreRepositoryImpl @Inject constructor(

@@ -3,21 +3,21 @@ package com.mobiletreeplantingapp.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
+import com.mobiletreeplantingapp.data.datastore.OnboardingPreferences
 import com.mobiletreeplantingapp.data.datastore.ThemeMode
 import com.mobiletreeplantingapp.data.datastore.ThemePreferences
 import com.mobiletreeplantingapp.navigation.RootNavGraph
+import com.mobiletreeplantingapp.ui.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.mobiletreeplantingapp.data.datastore.OnboardingPreferences
-import com.mobiletreeplantingapp.ui.theme.AppTheme
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {

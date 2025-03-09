@@ -1,26 +1,23 @@
 package com.mobiletreeplantingapp.ui.screen.navigation.explore
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.GeoPoint
 import com.google.maps.android.SphericalUtil
+import com.mobiletreeplantingapp.data.model.SavedArea
+import com.mobiletreeplantingapp.data.model.TreeRecommendation
+import com.mobiletreeplantingapp.data.repository.CoroutineDispatchers
+import com.mobiletreeplantingapp.data.repository.FirestoreRepository
+import com.mobiletreeplantingapp.data.repository.GeographicalDataRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import com.mobiletreeplantingapp.data.repository.GeographicalDataRepository
-import com.mobiletreeplantingapp.data.repository.FirestoreRepository
-import com.mobiletreeplantingapp.data.model.SoilProperties
-import com.mobiletreeplantingapp.data.model.TreeRecommendation
-import com.mobiletreeplantingapp.data.model.SavedArea
-import kotlinx.coroutines.flow.collectLatest
-import com.mobiletreeplantingapp.data.model.GeographicalData
-import com.mobiletreeplantingapp.data.repository.CoroutineDispatchers
-import android.util.Log
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.GeoPoint
 
 @HiltViewModel
 class ExploreViewModel @Inject constructor(

@@ -7,11 +7,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mobiletreeplantingapp.data.repository.CommunityRepository
 import com.mobiletreeplantingapp.data.repository.FirestoreRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.catch
 import com.mobiletreeplantingapp.ui.util.SampleDataSeeder
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(

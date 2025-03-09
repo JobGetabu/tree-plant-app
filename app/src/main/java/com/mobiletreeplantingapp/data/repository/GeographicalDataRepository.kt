@@ -1,18 +1,15 @@
 package com.mobiletreeplantingapp.data.repository
 
+import android.util.Log
 import com.google.android.gms.maps.model.LatLng
 import com.mobiletreeplantingapp.data.local.dao.GeographicalDataDao
-import com.mobiletreeplantingapp.data.local.entity.GeographicalDataEntity
 import com.mobiletreeplantingapp.data.model.GeographicalData
 import com.mobiletreeplantingapp.data.model.SoilProperties
 import com.mobiletreeplantingapp.data.remote.ElevationApiService
 import com.mobiletreeplantingapp.data.remote.SoilApiService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
-import kotlin.math.abs
-import android.util.Log
 
 class GeographicalDataRepository @Inject constructor(
     private val geographicalDataDao: GeographicalDataDao,

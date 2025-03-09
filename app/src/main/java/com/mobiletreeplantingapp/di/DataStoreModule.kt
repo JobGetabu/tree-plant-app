@@ -1,8 +1,8 @@
 package com.mobiletreeplantingapp.di
 
 import android.content.Context
-import com.mobiletreeplantingapp.data.datastore.ThemePreferences
 import com.mobiletreeplantingapp.data.datastore.OnboardingPreferences
+import com.mobiletreeplantingapp.data.datastore.ThemePreferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

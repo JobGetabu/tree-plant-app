@@ -21,8 +21,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 import java.util.UUID
+import javax.inject.Inject
 
 @HiltViewModel
 class AreaDetailViewModel @Inject constructor(

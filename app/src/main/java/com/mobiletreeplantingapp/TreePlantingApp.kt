@@ -1,13 +1,13 @@
 package com.mobiletreeplantingapp
 
 import android.app.Application
+import androidx.work.Configuration
 import com.google.firebase.BuildConfig
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
 import dagger.hilt.android.HiltAndroidApp
-import androidx.work.Configuration
 
 @HiltAndroidApp
 class TreePlantingApp: Application(), Configuration.Provider {

@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mobiletreeplantingapp.R
+import com.mobiletreeplantingapp.ui.screen.article.AllArticlesScreen
 import com.mobiletreeplantingapp.ui.screen.article.ArticleScreen
 import com.mobiletreeplantingapp.ui.screen.forum.ForumScreen
 import com.mobiletreeplantingapp.ui.screen.forum.post.ForumPostScreen
@@ -24,12 +25,11 @@ import com.mobiletreeplantingapp.ui.screen.navigation.detail.AreaDetailScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.explore.ExploreScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.home.HomeScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.saved.SavedAreasScreen
-import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsScreen
-import com.mobiletreeplantingapp.ui.screen.planting.PlantingGuideScreen
-import com.mobiletreeplantingapp.ui.screen.article.AllArticlesScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.settings.ContentScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.settings.EditProfileScreen
 import com.mobiletreeplantingapp.ui.screen.navigation.settings.NotificationSettingsScreen
+import com.mobiletreeplantingapp.ui.screen.navigation.settings.SettingsScreen
+import com.mobiletreeplantingapp.ui.screen.planting.PlantingGuideScreen
 
 @Composable
 fun MainGraph(

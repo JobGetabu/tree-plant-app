@@ -1,6 +1,6 @@
 package com.mobiletreeplantingapp.data.model
 
-import java.util.*
+import java.util.UUID
 
 data class TreeRecommendation(
     val id: String = UUID.randomUUID().toString(),

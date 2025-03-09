@@ -59,7 +59,6 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.mobiletreeplantingapp.data.model.Comment
 import com.mobiletreeplantingapp.data.model.ForumPost
-import com.mobiletreeplantingapp.navigation.Screen
 import com.mobiletreeplantingapp.ui.component.ErrorView
 import com.mobiletreeplantingapp.ui.component.LoadingView
 import com.mobiletreeplantingapp.ui.util.formatRelativeTime

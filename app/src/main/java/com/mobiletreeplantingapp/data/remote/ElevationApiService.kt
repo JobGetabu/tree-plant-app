@@ -1,6 +1,5 @@
 package com.mobiletreeplantingapp.data.remote
 
-import com.mobiletreeplantingapp.data.model.ElevationData
 import com.mobiletreeplantingapp.data.remote.response.ElevationResponse
 import retrofit2.Response
 import retrofit2.http.GET

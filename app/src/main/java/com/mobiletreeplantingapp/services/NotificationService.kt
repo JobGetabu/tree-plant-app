@@ -8,14 +8,13 @@ import androidx.work.WorkManager
 import com.mobiletreeplantingapp.data.model.NotificationPreferences
 import com.mobiletreeplantingapp.data.model.SavedTree
 import com.mobiletreeplantingapp.data.repository.PreferencesRepository
-import com.mobiletreeplantingapp.workers.ReminderWorker
 import com.mobiletreeplantingapp.ui.util.NotificationPermissionHandler
-import java.util.concurrent.TimeUnit
-import javax.inject.Inject
+import com.mobiletreeplantingapp.workers.ReminderWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.collect
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 class NotificationService @Inject constructor(
     private val context: Context,

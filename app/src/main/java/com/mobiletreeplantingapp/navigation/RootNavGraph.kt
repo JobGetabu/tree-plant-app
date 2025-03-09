@@ -8,8 +8,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.google.firebase.auth.FirebaseUser
-import com.mobiletreeplantingapp.data.repository.AuthRepositoryImpl
 import com.mobiletreeplantingapp.data.datastore.OnboardingPreferences
+import com.mobiletreeplantingapp.data.repository.AuthRepositoryImpl
 import com.mobiletreeplantingapp.ui.screen.onboarding.OnboardingScreen
 
 @Composable

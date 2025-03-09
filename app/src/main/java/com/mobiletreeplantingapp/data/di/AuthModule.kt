@@ -1,13 +1,12 @@
 package com.mobiletreeplantingapp.data.di
 
 //import FirestoreRepositoryImpl
+//import com.google.firebase.firestore.FirebaseFirestore
+//import com.mobiletreeplantingapp.data.repository.FirestoreRepository
 import android.content.Context
 import com.google.firebase.auth.FirebaseAuth
-//import com.google.firebase.firestore.FirebaseFirestore
-import com.mobiletreeplantingapp.data.datastore.ThemePreferences
 import com.mobiletreeplantingapp.data.repository.AuthRepositoryImpl
 import com.mobiletreeplantingapp.data.repository.EmailMatcherImpl
-//import com.mobiletreeplantingapp.data.repository.FirestoreRepository
 import com.mobiletreeplantingapp.domain.matcher.EmailMatcher
 import com.mobiletreeplantingapp.domain.repository.AuthRepository
 import com.mobiletreeplantingapp.domain.usecase.ForgotUseCases
