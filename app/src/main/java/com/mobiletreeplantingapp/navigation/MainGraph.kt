@@ -211,6 +211,13 @@ fun MainGraph(
                 onNavigateBack = { navController.navigateUp() }
             )
         }
+
+        // Add the AboutUs route
+        composable(Screen.AboutUs.route) {
+            com.mobiletreeplantingapp.ui.screen.about.AboutUsScreen(
+                innerPadding = PaddingValues()
+            )
+        }
     }
 }
 

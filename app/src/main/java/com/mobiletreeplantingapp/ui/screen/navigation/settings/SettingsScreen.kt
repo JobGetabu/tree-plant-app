@@ -37,6 +37,7 @@ import com.mobiletreeplantingapp.ui.component.ThemeSelector
 import coil.compose.AsyncImage
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.ui.unit.Dp
 
 @Composable
@@ -120,6 +121,11 @@ fun SettingsScreen(
                     icon = Icons.Default.Description,
                     title = "Terms of Service",
                     onClick = { navController.navigate(Screen.TermsOfService.route) }
+                ),
+                SettingsItem(
+                    icon = Icons.Default.Groups,
+                    title = "About Us",
+                    onClick = { navController.navigate(Screen.AboutUs.route) }
                 )
             )
         )

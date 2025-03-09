@@ -156,4 +156,11 @@ sealed class Screen(
         selectedIcon = Icons.Default.Description,
         unselectedIcon = Icons.Outlined.Description
     )
+    
+    object AboutUs : Screen(
+        route = "about_us",
+        title = "About Us",
+        selectedIcon = Icons.Default.Info,
+        unselectedIcon = Icons.Outlined.Info
+    )
 }
