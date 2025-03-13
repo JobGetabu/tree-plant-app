@@ -46,11 +46,14 @@ A modern Android application for tracking and managing tree planting activities 
 - Single activity pattern
 
 ## 📱 Screenshots
-|--|--|
-|[1](screens/Screenshot_1741865721.png)|[2](screens/Screenshot_1741865723.png)|[3](screens/Screenshot_1741865724.png)|(4)[screens/Screenshot_1741865731.png]|
 
-|--|--|
-|(5)[screens/1234.png]|(6)[screens/2345.png]|(5)[screens/3456.png]|
+| Screenshot 1 | Screenshot 2 | Screenshot 3 | Screenshot 4 |
+|--------------|--------------|--------------|--------------|
+| ![1](screens/Screenshot_1741865721.png) | ![2](screens/Screenshot_1741865723.png) | ![3](screens/Screenshot_1741865724.png) | ![4](screens/Screenshot_1741865731.png) |
+
+| Screenshot 5 | Screenshot 6 | Screenshot 7 |
+|--------------|--------------|--------------|
+| ![5](screens/1234.png) | ![6](screens/2345.png) | ![7](screens/3456.png) |
 
 ## 🔜 Upcoming Features
 - Offline support
